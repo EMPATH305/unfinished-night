@@ -13,6 +13,8 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  const query=fn=>page.evaluate(fn);
  const sky=()=>query(()=>{const el=document.querySelector('.sky-vortex-main'),css=getComputedStyle(el);return {transform:css.transform,name:css.animationName,play:css.animationPlayState}});
  check(!await page.locator('#story-dialog').isVisible()&&!await page.locator('#journal-dialog').isVisible(),'Closed dialogs must be hidden, including on mobile');
+ const skyBounds=await query(()=>[...document.querySelectorAll('.sky-vortex')].map(el=>({width:parseFloat(el.style.width),height:parseFloat(el.style.height),background:el.style.backgroundSize})));
+ check(skyBounds.length===2&&skyBounds.every(b=>b.width>0&&b.width===b.height&&b.background),'Sky patches must align to image-cover coordinates');
  const first=await sky();
  check(first.name==='sky-turn'||first.name==='none','Sky animation is missing');
  if(first.name==='none')check(await button('星空已靜止').isVisible()&&!await button('星空已靜止').isEnabled(),'Reduced motion must stop animation and disable playback');

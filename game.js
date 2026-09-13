@@ -121,6 +121,16 @@ for(const btn of document.querySelectorAll('[data-dir]')){const key={up:'ArrowUp
 for(let i=0;i<14;i++){const dot=document.createElement('i');dot.className='mote';dot.style.left=(7+i*6.5)%100+'%';dot.style.top=(30+i*13)%93+'%';dot.style.animationDelay=(-i*.9)+'s';$('motes').append(dot)}
 // Optional structured access uses the same visible journey state. No AI runtime dependency.
 const context=document.modelContext;if(context?.registerTool){const controller=new AbortController();for(const tool of [{name:'read_journey',title:'讀取畫境旅程',description:'Read the current chapter, objective and collected memories without changing the journey.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input!=='object'||Object.keys(input).length)throw Error('Expected an empty object.');return {chapter:game.chapter.title,objective:game.objective(),memories:game.state.memories.map(k=>Story.memories[k].title),finished:game.state.finished}}}]){try{Promise.resolve(context.registerTool(tool,{signal:controller.signal})).catch(()=>{})}catch(e){}}window.addEventListener('pagehide',()=>controller.abort(),{once:true})}
+// Coordinates measured in the 1536 × 1024 painting. Both circles lie fully in
+// the sky. Match background-cover geometry so they start on the painted whorls.
+function alignSky(){
+ const art=$('title-screen').querySelector('.title-art'),r=art.getBoundingClientRect();if(!r.width||!r.height)return;
+ const pos=getComputedStyle(art).backgroundPosition.split(' ').map(parseFloat),scale=Math.max(r.width/1536,r.height/1024);
+ const ox=(r.width-1536*scale)*(pos[0]/100),oy=(r.height-1024*scale)*(pos[1]/100);
+ const circles=[[944,208,165],[1140,322,83]];
+ $('title-screen').querySelectorAll('.sky-vortex').forEach((el,i)=>{const [x,y,radius]=circles[i],left=(x-radius)*scale,top=(y-radius)*scale;Object.assign(el.style,{left:(ox+left)+'px',top:(oy+top)+'px',width:(radius*2*scale)+'px',height:(radius*2*scale)+'px',backgroundSize:(1536*scale)+'px '+(1024*scale)+'px',backgroundPosition:(-left)+'px '+(-top)+'px'})});
+}
+const skyObserver=new ResizeObserver(alignSky);skyObserver.observe($('title-screen'));window.addEventListener('resize',alignSky);
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');let skyPaused=motionQuery.matches;
 function updateSky(){const stopped=skyPaused||motionQuery.matches;$('title-screen').classList.toggle('sky-paused',stopped);$('sky-motion-btn').textContent=stopped?'播放星空':'暫停星空';$('sky-motion-btn').setAttribute('aria-pressed',String(!stopped));$('sky-motion-btn').disabled=motionQuery.matches;if(motionQuery.matches)$('sky-motion-btn').textContent='星空已靜止'}
 $('sky-motion-btn').onclick=()=>{skyPaused=!skyPaused;updateSky()};motionQuery.addEventListener('change',updateSky);updateSky();

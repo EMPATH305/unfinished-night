@@ -48,3 +48,7 @@
 /* Closed dialogs must stay closed at every viewport width. */
 dialog:not([open]){display:none}
 .puzzle-feedback{animation:none}
+
+/* Source-aligned patches contain sky only, at the painting’s original scale. */
+.title-sky{mask-image:none}
+.sky-vortex{opacity:1;mask-image:radial-gradient(circle,#000 0%,#000 47%,#000d 58%,transparent 71%)}
