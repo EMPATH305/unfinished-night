@@ -129,9 +129,10 @@ for(let i=0;i<14;i++){const dot=document.createElement('i');dot.className='mote'
 // Optional structured access uses the same visible journey state. No AI runtime dependency.
 const context=document.modelContext;if(context?.registerTool){const controller=new AbortController();for(const tool of [{name:'read_journey',title:'讀取畫境旅程',description:'Read the current chapter, objective and collected memories without changing the journey.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input!=='object'||Object.keys(input).length)throw Error('Expected an empty object.');return {chapter:game.chapter.title,objective:game.objective(),memories:game.state.memories.map(k=>Story.memories[k].title),finished:game.state.finished}}}]){try{Promise.resolve(context.registerTool(tool,{signal:controller.signal})).catch(()=>{})}catch(e){}}window.addEventListener('pagehide',()=>controller.abort(),{once:true})}
 // Every visible circular star, the moon and both whorls share a slow sky current.
-const skyCircles=[[110,70,93],[207,2,32],[398,94,63],[519,14,44],[691,35,59],[1086,39,48],[563,230,70],[753,306,91],[1340,119,159],[944,208,165],[1140,322,83]];
+const skyCircles=[[110,70,70],[398,94,63],[691,35,35],[1086,39,39],[563,230,70],[753,306,74],[1340,119,119],[944,208,135],[1140,322,83]];
 const skyLayer=$('title-screen').querySelector('.title-sky');
-skyCircles.forEach((circle,i)=>{const el=document.createElement('div');el.className='sky-vortex'+(i===9?' sky-vortex-main':'');el.dataset.sky=String(i);el.style.animationDuration=(i>=9?120:180)+'s';skyLayer.append(el)});
+const skyMaxR=Math.max(...skyCircles.map(c=>c[2]));
+skyCircles.forEach((circle,i)=>{const el=document.createElement('div');el.className='sky-vortex'+(circle[2]===skyMaxR?' sky-vortex-main':'');el.dataset.sky=String(i);el.style.animationDuration=Math.round(70+circle[2]*0.6)+'s';skyLayer.append(el)});
 function alignSky(){
  const art=$('title-screen').querySelector('.title-art'),r=art.getBoundingClientRect();if(!r.width||!r.height)return;
  const pos=getComputedStyle(art).backgroundPosition.split(' ').map(parseFloat),scale=Math.max(r.width/1536,r.height/1024);
