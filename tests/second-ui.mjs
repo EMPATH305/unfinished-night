@@ -21,6 +21,7 @@ export async function runSecondUI(page,{importSave,report=()=>{},capture=async()
   const c=configs[i];check(await page.locator('#chapter-title').innerText()===c.title,'Expected new chapter '+c.title);
   check(await page.locator('#scene-art').getAttribute('data-image')===c.image,'Distinct background asset');
   check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
+  if(await button('地點清單').isVisible())check(await page.evaluate(()=>[...document.querySelectorAll('#chapter-nav button')].every(b=>b.getBoundingClientRect().width>=44&&b.getBoundingClientRect().height>=44)),'Chapter navigation needs 44px touch targets');
   await capture('map-'+i);
   await visit('witness');await close();
   await visit('record_a');await close();await visit('record_b');await close();

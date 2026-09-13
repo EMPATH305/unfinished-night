@@ -103,3 +103,5 @@ dialog:not([open]){display:none}
  .assignment-row select{font-size:16px}
  .hotspot-label{max-width:130px;white-space:normal;text-align:center;line-height:1.5}
 }
+
+@media(max-width:460px){#chapter-nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}#chapter-nav button{min-width:44px;min-height:44px}}
