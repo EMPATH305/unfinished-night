@@ -15,9 +15,10 @@ ledger:{title:'長夏的收支',chapter:2,text:'蓄光池每天有六份光。�
 rain:{title:'被藏起來的雨',chapter:2,text:'孩子不肯交出的快樂，是與過世的母親一起聽雨。取走那份快樂，也會剪斷他理解悲傷的線。藏雨的烏鴉願意歸還記憶，由居民自己決定如何保存。'},
 draft:{title:'房間底下的次序',chapter:3,text:'底稿記下三個時刻：先有畫者救下一隻受傷的烏鴉；接著畫境誕生；最後畫者離開，烏鴉拾起未被帶走的記憶。鏡中的房間卻刻意顛倒它們，讓「等待」看起來像一項永遠不能結束的約定。'},
 name:{title:'墨曾經有過的名字',chapter:3,text:'墨記得的呼喚，來自曾經救牠的人。牠最初叫「歸」，但如今牠選擇保留你給的名字。被記住，不代表必須活成別人的期待。'},
-painter:{title:'畫者留下的規則',chapter:4,text:'畫者沒有替世界寫下唯一的結局。裂縫來自被強迫固定的生活：永夜、長夏、永遠等待。修補結構可以暫緩崩解；是否改變規則，仍應由住在裡面的人參與決定。'},
+painter:{title:'畫者留下的規則',chapter:4,text:'畫境尚未乾透，原本就可能產生裂縫。把永夜、長夏與等待強迫固定，讓原本可被修補的裂痕不斷加深。畫者沒有留下唯一結局；修補結構與改變規則，都需要居民參與。'},
 promise:{title:'輪流記住',chapter:4,text:'烏鴉的羽毛有限，任何一個人也無法保存全部。你與墨約定：將故事交給更多願意聽的人。忘記並不等於不在乎，但保存也不能只壓在一個生命身上。'}
 };
 const choiceNames={night:'讓居民知情，暫時延續星夜',dawn:'協助居民準備，迎接黎明',letter:'替艾菈寄回真實的信',beacon:'修復路標，讓兩地保持聯絡',seasons:'讓花園恢復四季',consent:'保留長夏，改成自願輪值',rest:'帶著記憶，休息後離開',release:'放下房間準備的過去',restore:'修補畫框，建立共同守護',open:'打開邊界，讓居民自由往返',share:'把畫筆交給居民，共同改寫'};
 root.NightStory={chapters,memories,choiceNames};if(typeof module!=='undefined')module.exports=root.NightStory;
 })(typeof globalThis!=='undefined'?globalThis:this);
+

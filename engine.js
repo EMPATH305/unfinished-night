@@ -1,6 +1,8 @@
 (function(root){'use strict';
 const Story=root.NightStory||(typeof require==='function'?require('./story.js'):null);
-const initial=()=>({version:1,chapter:0,started:false,finished:false,flags:{},choices:{},pigments:[],memories:[],position:{x:50,y:82}});
+const Journey=root.NightJourney||(typeof require==='function'?require('./journey.js'):null);
+Journey.install(Story);
+const initial=()=>({version:1,contentVersion:2,region:0,chapter:0,started:false,finished:false,flags:{},choices:{},pigments:[],memories:[],position:{x:50,y:82}});
 const say=(id,label,run,detail)=>({id,label,run,detail});
 class Game{
  constructor(state){this.state=state?Game.validate(state):initial();this.actions=new Map();this.view=null;this.puzzle=null;}
@@ -8,16 +10,29 @@ class Game{
   if(!raw||raw.version!==1||!Number.isInteger(raw.chapter)||raw.chapter<0||raw.chapter>4||typeof raw.started!=='boolean'||typeof raw.finished!=='boolean')throw Error('這不是相容的旅程存檔。');
   if(!raw.flags||typeof raw.flags!=='object'||Array.isArray(raw.flags)||Object.keys(raw.flags).length>150)throw Error('存檔的事件資料不完整。');
   if(Object.entries(raw.flags).some(([k,v])=>!/^c[1-5]_[a-z_]+$/.test(k)||typeof v!=='boolean'))throw Error('存檔含有無效事件。');
-  if(!Array.isArray(raw.memories)||raw.memories.length>10||raw.memories.some(k=>!Object.hasOwn(Story.memories,k))||new Set(raw.memories).size!==raw.memories.length)throw Error('存檔的記憶資料無效。');
+  if(!Array.isArray(raw.memories)||raw.memories.length>Object.keys(Story.memories).length||raw.memories.some(k=>!Object.hasOwn(Story.memories,k))||new Set(raw.memories).size!==raw.memories.length)throw Error('存檔的記憶資料無效。');
   if(!Array.isArray(raw.pigments)||raw.pigments.some(c=>!['yellow','blue','green'].includes(c))||new Set(raw.pigments).size!==raw.pigments.length)throw Error('存檔的顏色資料無效。');
   const sets=[['night','dawn'],['letter','beacon'],['seasons','consent'],['rest','release'],['restore','open','share']];
   if(!raw.choices||typeof raw.choices!=='object'||Array.isArray(raw.choices)||Object.entries(raw.choices).some(([k,v])=>!/^c[1-5]$/.test(k)||!sets[Number(k[1])-1].includes(v)))throw Error('存檔的選擇資料無效。');
   for(let i=0;i<raw.chapter;i++)if(!raw.choices['c'+(i+1)])throw Error('存檔缺少前一章的結局。');
   if(raw.finished&&(!raw.choices.c5||raw.chapter!==4))throw Error('結局資料不完整。');
   if(!raw.position||!Number.isFinite(raw.position.x)||!Number.isFinite(raw.position.y)||raw.position.x<0||raw.position.x>100||raw.position.y<0||raw.position.y>100)throw Error('存檔的位置無效。');
-  return {version:1,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
+  if(raw.contentVersion!==undefined&&![1,2].includes(raw.contentVersion))throw Error('這份存檔來自不支援的故事版本。');
+  if(raw.region!==undefined&&(!Number.isInteger(raw.region)||raw.region<0||raw.region>1))throw Error('探索區域資料無效。');
+  return {version:1,contentVersion:raw.contentVersion||1,region:raw.contentVersion===2?(raw.region||0):0,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
  }
  get chapter(){return Story.chapters[this.state.chapter]}
+ get expanded(){return this.state.contentVersion>=2}
+ get regions(){return this.expanded?this.chapter.regions:[{name:'原有旅程',ids:this.chapter.nodes.map(n=>n[0])}]}
+ get allNodes(){return this.expanded?[...this.chapter.nodes,...this.chapter.expansionNodes]:this.chapter.nodes}
+ regionFor(id){return this.regions.findIndex(r=>r.ids.includes(id))}
+ get mapNodes(){
+  if(!this.expanded)return this.chapter.nodes;
+  const coordinates=[[22,37],[75,37],[47,54],[22,73],[78,73]];
+  return this.regions[this.state.region].ids.map((id,i)=>{const n=this.allNodes.find(n=>n[0]===id);return [n[0],n[1],...coordinates[i],n[4]]});
+ }
+ setRegion(index){if(!Number.isInteger(index)||index<0||index>=this.regions.length)throw Error('這個探索區域不存在。');this.state.region=index;this.state.position={x:50,y:85};this.actions.clear();this.puzzle=null;this.view=null;return this.regions[index].name}
+ get goal(){return Journey.goal(this)}
  has(k){return !!this.state.flags[k]}
  flag(k){this.state.flags[k]=true}
  remember(k){if(!this.state.memories.includes(k))this.state.memories.push(k)}
@@ -27,12 +42,13 @@ class Game{
  show(speaker,text,options=[],puzzle=null){this.actions=new Map(options.map(o=>[o.id,o.run]));this.puzzle=puzzle;this.view={speaker,text:Array.isArray(text)?text:[text],choices:options.map(({run,...o})=>o),puzzle};return this.view}
  choose(id){if(!this.actions.has(id))throw Error('這個選擇目前不可使用。');const run=this.actions.get(id);return run()}
  start(){this.state.started=true;return this.intro()}
- intro(){return this.show('第'+['一','二','三','四','五'][this.state.chapter]+'章 · '+this.chapter.title,this.chapter.intro,[say('explore','開始探索',()=>null)])}
+ intro(){return this.show('第'+['一','二','三','四','五'][this.state.chapter]+'章 · '+this.chapter.title,Journey.intro(this),[say('explore','開始探索',()=>null)])}
  decide(key,value,text){this.state.choices[key]=value;this.flag(key+'_done');return this.show('選擇留下的痕跡',text,[say('back','回到畫境，看看改變',()=>null)])}
- advance(){if(!this.state.choices['c'+(this.state.chapter+1)]||this.state.chapter>=4)throw Error('這一章的故事還沒有結束。');this.state.chapter++;this.state.pigments=[];this.state.position={x:50,y:84};return this.intro()}
+ advance(){if(!this.state.choices['c'+(this.state.chapter+1)]||this.state.chapter>=4)throw Error('這一章的故事還沒有結束。');if(!Journey.readyToLeave(this))throw Error(this.goal.text);this.state.chapter++;this.state.contentVersion=2;this.state.region=0;this.state.pigments=[];this.state.position={x:50,y:84};return this.intro()}
  interact(id){
-  if(!this.chapter.nodes.some(n=>n[0]===id))throw Error('這裡沒有那個地標。');
+  if(!this.mapNodes.some(n=>n[0]===id))throw Error('這裡沒有那個地標。');
   this.flag('c'+(this.state.chapter+1)+'_visited_'+id);
+  const chapterEvent=Journey.event(this,id);if(chapterEvent)return chapterEvent;
   return [this.one,this.two,this.three,this.four,this.five][this.state.chapter].call(this,id);
  }
  one(id){const s=this.state,c=s.choices.c1;
@@ -141,9 +157,9 @@ class Game{
   }
  }
  solve(input){
-  if(!this.puzzle)throw Error('目前沒有等待解開的謎題。');const p=this.puzzle;
+  if(!this.puzzle)throw Error('目前沒有等待解開的謎題。');const expandedResult=Journey.solve(this,input);if(expandedResult)return expandedResult;const p=this.puzzle;
   const answers={stars:['燈','月','星'],roads:['溪水','舊鐘','遠山'],memories:['救下烏鴉','畫境誕生','畫者離開'],weave:['藍','綠','黃'],lights:[2,3,1]};
-  const answer=answers[p.id];
+  const answer=answers[p.id];if(!answer)throw Error('目前沒有等待解開的謎題。');
   if(p.id==='lights'){
    if(!Array.isArray(input)||input.length!==3||input.some(v=>!Number.isInteger(v)||v<0))return {ok:false,message:'份數必須是零或正整數。'};
    const total=input.reduce((a,b)=>a+b,0);
@@ -165,9 +181,9 @@ class Game{
  }
  finish(value){this.state.choices.c5=value;this.state.finished=true;this.flag('c5_done');return this.ending()}
  ending(){const c=this.state.choices;const titles={restore:'結局 · 有窗的畫框',open:'結局 · 往返之岸',share:'結局 · 眾人的筆觸'};const opening={restore:'你修補畫框，並在每個畫境留下可以打開的議事窗。邊界仍在，卻不再只有一個高處的人決定世界如何運作。',open:'你在畫框上開出第一道可往返的門。有人踏出去，有人選擇留下；回家的路被仔細標記，未知沒有被假裝成安全。',share:'你把畫筆分給願意參與的居民。第一天，他們就為天空的顏色爭論。你們先約定：改動會影響別人的地方，要一起商量，也要能修回來。'};
-  return this.show(titles[c.c5],[opening[c.c5],c.c1==='dawn'?'迴星鎮有了第二個早晨。索恩在鐘樓下學著修一張普通的椅子。':'迴星鎮還在星夜裡，但每次循環的代價都公開記錄。亞恩加入了決定下一個明天的集會。',c.c2==='letter'?'製燈人收到艾菈的信。他沒有等到歸期，卻不再把沉默誤認成她的意願。':'麥原兩端的路標仍然清晰。艾菈沿著自己選擇的路回去探望，也再次自由離開。',c.c3==='seasons'?'日葵庭第一次入冬。瑟芙向老居民學習護根，路恩知道明年還可能再開花。':'日葵庭有幾天不再明亮。居民學著接受有人拒絕，並反覆修改輪值制度。',c.c4==='rest'?'藍色房間仍提供歇腳的地方。門旁添了一面鐘，窗戶永遠留一條縫。':'藍色房間不再替住客安排過去。桌上那封沒有落款的信，終於只是一張紙。','墨落在你的肩上。「今天有幾個人？」牠問。你開始數，牠安靜地聽。','畫布還沒有乾。這一次，未完成也可以是一種希望。'],[say('epilogue-close','留在畫境，翻閱旅人手記',()=>null)],{kind:'ending',id:c.c5});
+  return this.show(titles[c.c5],Journey.ending(this,[opening[c.c5],c.c1==='dawn'?'迴星鎮有了第二個早晨。索恩在鐘樓下學著修一張普通的椅子。':'迴星鎮還在星夜裡，但每次循環的代價都公開記錄。亞恩加入了決定下一個明天的集會。',c.c2==='letter'?'製燈人收到艾菈的信。他沒有等到歸期，卻不再把沉默誤認成她的意願。':'麥原兩端的路標仍然清晰。艾菈沿著自己選擇的路回去探望，也再次自由離開。',c.c3==='seasons'?'日葵庭第一次入冬。瑟芙向老居民學習護根，路恩知道明年還可能再開花。':'日葵庭有幾天不再明亮。居民學著接受有人拒絕，並反覆修改輪值制度。',c.c4==='rest'?'藍色房間仍提供歇腳的地方。門旁添了一面鐘，窗戶永遠留一條縫。':'藍色房間不再替住客安排過去。桌上那封沒有落款的信，終於只是一張紙。','墨落在你的肩上。「今天有幾個人？」牠問。你開始數，牠安靜地聽。','畫布還沒有乾。這一次，未完成也可以是一種希望。']),[say('epilogue-close','留在畫境，翻閱旅人手記',()=>null)],{kind:'ending',id:c.c5});
  }
- objective(){const f=k=>this.has(k),c=this.state.choices;
+ objective(){if(this.goal)return this.goal.text;const f=k=>this.has(k),c=this.state.choices;
  switch(this.state.chapter){case 0:if(c.c1)return '看看製燈人的回應，再前往麥田小徑。';if(!f('c1_letter'))return f('c1_yellow')?'用黃色照亮褪色的信。':'向製燈人借一點黃色。';if(!f('c1_keeper'))return f('c1_blue')?'用藍色穿過裂縫，見守夜人。':'向靜藍井借藍，前往鐘樓。';return f('c1_tuned')?'回到星辰，決定小鎮的未來。':'依信的提示喚醒星鐘。';
  case 1:if(c.c2)return '穿過花園邊界。';if(!f('c2_feather'))return '尋找沾泥的羽毛，查明路記。';return f('c2_path')?'前往營火，聽艾菈的故事。':'依羽毛裡的路記穿過岔路。';
  case 2:if(c.c3)return '看看守庭人的回應，再推開藍色門。';if(!f('c3_ledger'))return '閱讀光的帳簿，查明真正需求。';if(!f('c3_light'))return '將蓄光池的六份光導入分光器。';if(!f('c3_balanced'))return '在三座分光燈分配六份光。';if(!f('c3_child')||!f('c3_rain'))return '聽孩子與藏雨烏鴉的故事。';return '回分光燈，與居民決定長夏的未來。';
@@ -177,3 +193,4 @@ class Game{
 }
 root.NightGame=Game;if(typeof module!=='undefined')module.exports=Game;
 })(typeof globalThis!=='undefined'?globalThis:this);
+
