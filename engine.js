@@ -58,7 +58,7 @@ class Game{
   if(id==='star'){
    if(c)return this.show('星辰',c==='dawn'?'星星終於完成了一次旋轉。遠處的天空，開始有很淡的金色。':'星空維持緩慢的循環。鐘樓下多了一張公開記錄：每次修補，都必須讓居民知道。');
    if(!this.has('c1_letter')||!this.has('c1_keeper'))return this.show('失速的星辰',['三枚星鐘刻著燈、月、星的圖案。墨擋住你的手。','「先讀那封信，也聽聽守夜人的說法。修復之前，總得知道你在改變誰的生活。」']);
-   if(!this.has('c1_tuned'))return this.show('星鐘的次序','依照信裡的提示，喚醒三枚星鐘。順序可以在旅人手記裡重讀。',[],{kind:'sequence',id:'stars',items:['星','燈','月'],length:3});
+   if(!this.has('c1_tuned'))return this.show('星鐘的次序','依照信裡的提示，喚醒三枚星鐘。順序可以在旅人手記裡重讀。',[],{kind:'sequence',id:'stars',items:['星','燈','月','鐘'],length:3});
    return this.show('星空等待你的回答',['索恩召集居民，說出了循環的代價。有人害怕黎明，有人已經不願再過同一天。','兩條路都需要持續照顧。你能做的是先幫他們準備，而不是替他們保證永遠安全。'],[say('night','知情地延續星夜',()=>this.decide('c1','night',['居民決定暫留在星夜裡，輪流記錄名字與修補的代價。','你協助索恩建立公開的星鐘記錄。製燈人第一次讀懂女兒留下的信。去和他說說話，再踏上麥田小徑。']),'暫時維持小鎮，但停止隱瞞循環的磨損。'),say('dawn','一起準備，迎接黎明',()=>this.decide('c1','dawn',['你與居民加固屋簷，把借來的顏色歸還。索恩鬆開鐘錘。','第一縷晨光裡，製燈人收起了燈。去看看他的回應，再踏上麥田小徑。']),'結束循環，小鎮開始學習面對未知。')]);
   }
   if(id==='gate')return c?this.show('麥田小徑',['墨最後數了一次窗裡的人。「都還在。現在我們去找那個自己走出去的人。」'],[say('next','走向岔路麥原',()=>this.advance())]):this.show('麥田小徑','星鐘還沒得到回答。先查清信件與鐘樓的祕密，完成小鎮的選擇。');
@@ -71,7 +71,7 @@ class Game{
   if(id==='path'){
    if(this.has('c2_path'))return this.show('固定下來的道路','路暫時不再分岔。遠行者的營火就在前方；她的故事應由她自己說。');
    if(!this.has('c2_feather'))return this.show('會移動的岔路','路一直在改變。先找到沾泥的羽毛，確認艾菈留下的路記。');
-   return this.show('走過的人留下的次序','依照路記選擇三個地標。猜錯只會回到原地，不會失去記憶。',[],{kind:'sequence',id:'roads',items:['遠山','舊鐘','溪水'],length:3});
+   return this.show('走過的人留下的次序','依照路記選擇三個地標。猜錯只會回到原地，不會失去記憶。',[],{kind:'sequence',id:'roads',items:['遠山','舊鐘','溪水','路牌'],length:3});
   }
   if(id==='daughter'){
    if(!this.has('c2_path'))return this.show('隔著麥浪的營火','你看得到火，卻始終走不到。先解開岔路的次序。');
@@ -109,7 +109,7 @@ class Game{
   if(id==='wall'){
    if(this.has('c4_order'))return this.show('重疊的三幅畫','受傷的烏鴉、誕生的畫境、離開的畫者。你不再把先後誤認成一個永遠等待的命令。去窗邊回答墨。');
    if(!this.has('c4_draft')||!this.carries('blue'))return this.show('重疊的三幅畫','表面畫像一直改變。需要床下的底稿作為證據，以及鏡中的藍來凝止假象。');
-   return this.show('把往事放回次序','按發生先後排列事件。床下的底稿已收入手記。',[],{kind:'sequence',id:'memories',items:['畫者離開','救下烏鴉','畫境誕生'],length:3});
+   return this.show('把往事放回次序','按發生先後排列事件。床下的底稿已收入手記。',[],{kind:'sequence',id:'memories',items:['畫者離開','救下烏鴉','畫境誕生','永遠等待'],length:3});
   }
   if(id==='window'){
    if(!this.has('c4_order'))return this.show('窗外的墨',['牠敲了三次。「我還在。先去看底稿，別讓房間替你安排我們的過去。」','你回答牠，窗上的霧散開一小塊。']);
@@ -143,7 +143,21 @@ class Game{
  solve(input){
   if(!this.puzzle)throw Error('目前沒有等待解開的謎題。');const p=this.puzzle;
   const answers={stars:['燈','月','星'],roads:['溪水','舊鐘','遠山'],memories:['救下烏鴉','畫境誕生','畫者離開'],weave:['藍','綠','黃'],lights:[2,3,1]};
-  if(!Array.isArray(input)||input.length!==3||input.some((v,i)=>v!==answers[p.id][i]))return {ok:false,message:p.id==='lights'?'光沒有平均分配的義務，要依實際需要安放：育苗 2、住屋 3、路燈 1。':'沒有接上。墨說：「先看看手記裡的次序。猜錯沒關係，線索還在。」'};
+  const answer=answers[p.id];
+  if(p.id==='lights'){
+   if(!Array.isArray(input)||input.length!==3||input.some(v=>!Number.isInteger(v)||v<0))return {ok:false,message:'份數必須是零或正整數。'};
+   const total=input.reduce((a,b)=>a+b,0);
+   if(total!==6)return {ok:false,message:'六份光要剛好分完：目前分出去 '+total+' 份，'+(total<6?'還差 '+(6-total)+' 份。':'多分了 '+(total-6)+' 份。')};
+   if(input.some((v,i)=>v!==answer[i])){
+    const labels=['育苗燈','住屋燈','路燈'];
+    const notes=input.map((v,i)=>v===answer[i]?null:labels[i]+(v>answer[i]?'多了 '+(v-answer[i])+' 份':'少了 '+(answer[i]-v)+' 份')).filter(Boolean);
+    return {ok:false,message:'還沒安放好：'+notes.join('，')+'。'};
+   }
+  } else {
+   if(!Array.isArray(input)||input.length!==answer.length)return {ok:false,message:'還需要選滿三項，才能送出。'};
+   const matched=input.filter((v,i)=>v===answer[i]).length;
+   if(matched<answer.length)return {ok:false,message:matched===0?'沒有一項接上。墨說：「先看看手記裡的次序，猜錯沒關係，線索還在。」':'有 '+matched+' 項已經接上了，其餘的再排排看。'};
+  }
   const flag={stars:'c1_tuned',roads:'c2_path',lights:'c3_balanced',memories:'c4_order',weave:'c5_woven'}[p.id];this.flag(flag);
   if(p.id==='memories')this.use('blue');if(p.id==='weave')this.state.pigments=[];
   const texts={stars:['星鐘開始回應','燈、月、星依次亮起。再靠近失速的星辰，與居民決定小鎮的未來。'],roads:['路終於有了方向','麥穗往兩旁退開。遠行者的營火已能抵達，去聽聽艾菈的說法。'],lights:['六份光，各得其所','育苗、住屋與道路重新亮起。維持生活不必拿走孩子的記憶；聽過孩子與藏雨烏鴉的故事後，再回來討論長夏。'],memories:['底稿與表面分開了','你把鏡中的藍歸還。房間不再替過去改寫次序。墨正在窗外等你。'],weave:['世界暫時接合','三色融入裂口，沒有消失，只是換了一個位置。海面終於平靜下來。去陪墨說完最後一段話。']}[p.id];
