@@ -36,7 +36,7 @@ function renderPuzzle(p){
  const count=p.count||p.length||3,total=p.total||6,unit=p.id==='ferry'?'塊木板':'份光';
  let values=numeric?p.items.map(()=>0):assigned?p.rows.map(()=>null):[];
  const feedback=document.createElement('p');feedback.className='puzzle-feedback';feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.setAttribute('aria-atomic','true');
- const report=message=>{feedback.textContent=message;feedback.scrollIntoView({block:'nearest'})};
+ const report=message=>{feedback.textContent=message;feedback.style.display='block';setTimeout(()=>feedback.scrollIntoView({block:'center',behavior:'smooth'}),100)};
  const display=document.createElement('div');display.className='sequence-display';display.setAttribute('aria-live','polite');area.append(display);
  const controls=document.createElement('div');controls.className='puzzle-grid';area.append(controls);
  const update=()=>{
