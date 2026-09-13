@@ -1,5 +1,7 @@
 # 未乾之夜 · The Unfinished Night
 
+第二部世界設定：[畫境志總卷](docs/atlas/README.md) · [赤赭鹽市](docs/atlas/06-ochre-salt-market.md) · [雪鈴城](docs/atlas/07-snowbell-city.md) · [玻璃潮汐](docs/atlas/08-glass-tides.md)。這是第六至八章的長篇創作背景，尚未開放為遊玩章節。
+
 以梵谷繪畫為靈感，與烏鴉「墨」一同探索的五章原創奇幻遊戲。
 
 創作發起：林萱渝。故事、程式與繪畫素材：AI 協作。世界與情節均為虛構，非梵谷生平或畫作的唯一解讀。
