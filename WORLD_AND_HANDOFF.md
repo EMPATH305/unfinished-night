@@ -85,3 +85,8 @@ GitHub Actions 執行 tests/run-ui.mjs：用全新 Chromium context 跑桌面、
 ### 餘彩域與手機擴充
 
 atlas.js 保存十篇可選世界故事，以既有地標造訪旗標推導發現狀態。game.js 的追問只切換 UI，不取代 engine 的主線 actions；返回時仍可完成原互動。詳細設定與尚未開放的後續地區見 WORLD_EXPANSION.md。星空 source 座標擴至十一處，手機採底部工具列、可收起方向鍵與地點清單。
+
+
+## 2026-09-13 第二部首次實裝
+
+六至八章已由 second.js 接入 engine.js，第一部結局提供自願繼續入口；不強迫已通關存檔跳章。新章沿用既有兩區域、對話分頁、配對／分配謎題、手記與觸控工具。schema version 2 不變；contentVersion 3 僅限 chapter 5–7。第八章完成需要 c8 選擇、歸還、交接及當事人回訪。完整背景在 docs/atlas/，實裝節選不等於所有長篇設定均已轉成任務。白鹽信與失蹤畫者仍未揭曉。圖片 salt.jpg / snow.jpg / glass.jpg 由本次三張附件保留構圖轉檔。

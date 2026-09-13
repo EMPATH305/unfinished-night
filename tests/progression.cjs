@@ -55,5 +55,5 @@ const g=fresh();assert.throws(()=>g.solve([]));assert.throws(()=>g.advance());as
 for(const invalid of [{chapter:12},{pigments:['red']},{memories:['__proto__']},{chapter:1},{flags:{bad:'string'}},{position:{x:NaN,y:50}},{region:2},{contentVersion:3}])assert.throws(()=>new Game({...g.state,...invalid}));
 // Region navigation invalidates a staged puzzle; a cancelled task cannot mutate progress.
 visit(g,'lamp');choose(g,'borrow-yellow');visit(g,'letter');choose(g,'reveal');visit(g,'well');choose(g,'borrow-blue');visit(g,'keeper');choose(g,'freeze');visit(g,'workshop');g.setRegion(0);assert.throws(()=>g.solve([1,2,0]));assert(!g.has('c1_prepared'));
-assert.equal(Object.keys(Story.memories).length,25);
+assert.equal(Object.values(Story.memories).filter(m=>m.chapter<5).length,25);
 console.log('PASS: 96 complete expanded routes (48 main choices × 2 personal annotations), 10 puzzles, regional navigation, aftermath gates, 25 memories, preserved user hints/distractors, six real legacy saves, invalid imports. '+checkpoints+' checkpoints.');

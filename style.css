@@ -91,3 +91,15 @@ dialog:not([open]){display:none}
 @media(max-width:360px){.header-actions .quiet{font-size:12px}.wordmark{font-size:18px}.game-header{gap:2px}.hotspot-label{max-width:88px;font-size:13px}.title-copy{margin-top:calc(66.667vw - 65px)}}
 @media(max-height:500px) and (orientation:landscape){dialog{max-height:calc(100dvh - 12px)}.title-copy{margin-top:25px}.title-art,.title-sky{height:100%;aspect-ratio:auto}.title-shade{background:linear-gradient(90deg,#0b1322ee,#0b132250)}#world{height:420px}}
 @media(prefers-reduced-motion:reduce){.sky-current path,.sky-vortex::after{animation:none!important}.sky-current{opacity:.2}}
+
+
+/* Eight chapters remain touch targets without squeezing the page width. */
+#chapter-nav{gap:8px;min-width:0}.chapter-dot{flex:0 0 auto}
+.assignment-row{min-width:0}.assignment-row select{width:100%;min-width:0;max-width:100%;font-size:15px}
+@media(max-width:800px),(pointer:coarse){
+ #chapter-nav{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px;justify-items:center}
+ #chapter-nav button{width:100%;min-width:0;min-height:44px;border-radius:8px}
+ .assignment-row{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+ .assignment-row select{font-size:16px}
+ .hotspot-label{max-width:130px;white-space:normal;text-align:center;line-height:1.5}
+}
