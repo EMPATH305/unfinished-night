@@ -3,7 +3,11 @@ const $=id=>document.getElementById(id),Story=window.NightStory,Game=window.Nigh
 let game=new Game(),active=false,target=null,arrival=null,lastTime=0,toastTimer,storageOK=true,audioCtx=null,audioGain=null,audioTimer=null,audioOn=false;
 const keys=new Set();const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 try{const saved=localStorage.getItem(KEY);if(saved)game=new Game(JSON.parse(saved))}catch(e){storageOK=false;setTimeout(()=>toast('先前存檔無法讀取，或瀏覽器不允許儲存。可用匯入／下載存檔保存旅程。'),400)}
-function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),4800)}
+function toast(message){
+ const dialog=[$('story-dialog'),$('journal-dialog')].find(d=>d.open);
+ if(dialog){let notice=dialog.querySelector('.dialog-notice');if(!notice){notice=document.createElement('p');notice.className='dialog-notice';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.setAttribute('aria-atomic','true');dialog.append(notice)}notice.textContent=message;notice.scrollIntoView({block:'nearest'});return}
+ $('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast').classList.remove('show');$('toast').textContent=''},4800)
+}
 function save(){if(!game.state.started)return;try{localStorage.setItem(KEY,JSON.stringify(game.state));storageOK=true}catch(e){if(storageOK)toast('此瀏覽器無法自動存檔。請從手記下載存檔。');storageOK=false}}
 function title(){active=false;cancelMove();$('title-screen').hidden=false;$('game-screen').hidden=true;$('continue-btn').hidden=!game.state.started;$('continue-btn').textContent=game.state.finished?'回到已完成的旅程':'繼續上次的旅程';$('save-info').textContent=game.state.started?(game.state.finished?'已完成五章 · 你的選擇已留在畫境':'旅程停在第 '+game.chapter.roman+' 章 · '+game.chapter.title+(game.expanded?'':'（本章保留舊流程，下一章加入新內容）')):'五幅畫境 · 一位旅人 · 一隻記得你的烏鴉';$('start-btn').textContent=game.state.started?'開始一段新旅程':'走進畫裡 ↗'}
 function enter(){active=true;$('title-screen').hidden=true;$('game-screen').hidden=false;render();$('world').focus({preventScroll:true})}
@@ -20,7 +24,7 @@ function render(){
 function updatePosition(){const p=game.state.position;$('traveler').style.left=p.x+'%';$('traveler').style.top=p.y+'%'}
 function setMotion(moving,dx){const t=$('traveler');t.classList.toggle('walking',moving);if(dx>0.02){t.classList.add('dir-right');t.classList.remove('dir-left')}else if(dx<-0.02){t.classList.add('dir-left');t.classList.remove('dir-right')}}
 function paragraphs(element,text){element.replaceChildren();text.forEach(t=>{const p=document.createElement('p');p.textContent=t;element.append(p)})}
-function show(view,handlers){if(!view){$('story-dialog').close();render();save();return}cancelMove();const d=$('story-dialog');$('dialog-speaker').textContent=view.speaker;$('dialog-kicker').textContent=view.puzzle?.kind==='ending'?'THE UNFINISHED NIGHT · 終章':'畫境裡的聲音';paragraphs($('dialog-text'),view.text);$('dialog-choices').replaceChildren();$('puzzle-area').replaceChildren();
+function show(view,handlers){if(!view){$('story-dialog').close();render();save();return}cancelMove();const d=$('story-dialog');d.querySelector('.dialog-notice')?.remove();$('toast').textContent='';$('toast').classList.remove('show');$('dialog-speaker').textContent=view.speaker;$('dialog-kicker').textContent=view.puzzle?.kind==='ending'?'THE UNFINISHED NIGHT · 終章':'畫境裡的聲音';paragraphs($('dialog-text'),view.text);$('dialog-choices').replaceChildren();$('puzzle-area').replaceChildren();
  for(const choice of view.choices||[]){const button=document.createElement('button');button.textContent=choice.label;if(choice.detail){const detail=document.createElement('small');detail.textContent=choice.detail;button.append(detail)}button.onclick=()=>{try{const next=handlers?handlers[choice.id]():game.choose(choice.id);render();save();if(next!==undefined)show(next);else d.close()}catch(e){toast(e.message)}};$('dialog-choices').append(button)}
  if(view.puzzle&&view.puzzle.kind!=='ending')renderPuzzle(view.puzzle);
  if(!view.choices?.length&&!view.puzzle){const button=document.createElement('button');button.textContent='收起話語，繼續探索';button.onclick=()=>d.close();$('dialog-choices').append(button)}
@@ -31,6 +35,8 @@ function renderPuzzle(p){
  const area=$('puzzle-area'),numeric=p.kind==='allocation',assigned=p.kind==='assignment',selected=p.kind==='selection';
  const count=p.count||p.length||3,total=p.total||6,unit=p.id==='ferry'?'塊木板':'份光';
  let values=numeric?p.items.map(()=>0):assigned?p.rows.map(()=>null):[];
+ const feedback=document.createElement('p');feedback.className='puzzle-feedback';feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.setAttribute('aria-atomic','true');
+ const report=message=>{feedback.textContent=message;feedback.scrollIntoView({block:'nearest'})};
  const display=document.createElement('div');display.className='sequence-display';display.setAttribute('aria-live','polite');area.append(display);
  const controls=document.createElement('div');controls.className='puzzle-grid';area.append(controls);
  const update=()=>{
@@ -47,28 +53,29 @@ function renderPuzzle(p){
   });
  }else if(p.kind==='sequence'||selected){
   p.items.forEach((item,i)=>{const btn=document.createElement('button');btn.textContent=item;
-   btn.onclick=()=>{if(selected&&values.includes(i))values=values.filter(v=>v!==i);else if(values.length<count)values.push(selected?i:item);else toast('已選滿 '+count+' 項；可以取消選取或清除後重排。');update()};controls.append(btn);
+   btn.onclick=()=>{if(selected&&values.includes(i))values=values.filter(v=>v!==i);else if(values.length<count)values.push(selected?i:item);else report('已選滿 '+count+' 項；可以取消選取或清除後重排。');update()};controls.append(btn);
   });
  }else{
   controls.style.display='block';p.items.forEach((label,i)=>{
    const row=document.createElement('div');row.className='allocation-row';const name=document.createElement('span');name.textContent=label;const counter=document.createElement('div');counter.className='counter';
    const minus=document.createElement('button'),plus=document.createElement('button'),out=document.createElement('output');minus.textContent='−';plus.textContent='+';
    minus.setAttribute('aria-label',label+'減少一'+unit);plus.setAttribute('aria-label',label+'增加一'+unit);out.setAttribute('aria-label',label+'目前數量');
-   minus.onclick=()=>{values[i]=Math.max(0,values[i]-1);update()};plus.onclick=()=>{if(values.reduce((a,b)=>a+b,0)<total){values[i]++;update()}else toast('只有 '+total+' '+unit+'。請先從另一處減少。')};
+   minus.onclick=()=>{values[i]=Math.max(0,values[i]-1);update()};plus.onclick=()=>{if(values.reduce((a,b)=>a+b,0)<total){values[i]++;update()}else report('只有 '+total+' '+unit+'。請先從另一處減少。')};
    counter.append(minus,out,plus);row.append(name,counter);controls.append(row);
   });
  }
  const buttons=document.createElement('div');buttons.className='save-actions';const reset=document.createElement('button'),submit=document.createElement('button'),hint=document.createElement('button');
- reset.className='secondary';reset.textContent='清除重排';reset.onclick=()=>{values=numeric?p.items.map(()=>0):assigned?p.rows.map(()=>null):[];controls.querySelectorAll('select').forEach(select=>select.value='');update()};
+ reset.className='secondary';reset.textContent='清除重排';reset.onclick=()=>{values=numeric?p.items.map(()=>0):assigned?p.rows.map(()=>null):[];controls.querySelectorAll('select').forEach(select=>select.value='');feedback.textContent='';update()};
  submit.className='primary';submit.textContent=assigned?'確認安排':selected?'核對這些依據':numeric?'確認分配':'讓記憶接合';
- submit.onclick=()=>{try{const result=game.solve(values);if(result.ok){render();save();show(result.view)}else{toast(result.message);if(p.kind==='sequence'){values=[];update()}}}catch(e){toast(e.message)}};
+ submit.onclick=()=>{try{const result=game.solve(values);if(result.ok){render();save();show(result.view)}else{report(result.message);if(p.kind==='sequence'){values=[];update()}}}catch(e){report(e.message)}};
  hint.className='text-btn';hint.textContent='請墨給一點提示';let hintStage=0;
+ const clue=document.createElement('p');clue.className='puzzle-clue';clue.setAttribute('aria-live','polite');clue.setAttribute('aria-atomic','true');
  hint.onclick=()=>{
   const vague={stars:'墨歪著頭：「先想想那封信最先提到哪裡的光。」',roads:'墨用喙碰了碰羽毛：「先看看它沾過什麼顏色的泥。」',lights:'墨說：「答案就攤在帳簿那一頁，你只是還沒仔細讀。」',memories:'墨壓低聲音：「鏡子最擅長的，就是把發生的順序換一遍。」',weave:'墨說：「三種顏色，各自擅長不同的事。想想它們平常做什麼。」'};
   const full={stars:Story.memories.letter.text,roads:Story.memories.footprints.text,lights:Story.memories.ledger.text,memories:Story.memories.draft.text,weave:'先以藍凝止崩解，再以綠接合裂口，最後以黃照見彼此。'};
-  let clue=area.querySelector('.puzzle-clue');if(!clue){clue=document.createElement('p');clue.className='puzzle-clue';clue.setAttribute('aria-live','polite');area.append(clue)}
   if(hintStage===0){clue.textContent=(p.hint||vague[p.id])+'（再按一次可看完整線索）';hintStage=1;hint.textContent='重讀完整線索'}else clue.textContent=p.clue||full[p.id];
- };buttons.append(submit,reset,hint);area.append(buttons);update();
+  clue.scrollIntoView({block:'nearest'});
+ };buttons.append(submit,reset,hint);area.append(feedback,buttons,clue);update();
 }
 function renderRegions(){
  const goal=game.goal;$('chapter-phase').textContent=goal?goal.stage:'既有旅程 · 本章沿用原流程';
@@ -99,7 +106,7 @@ function tick(now){const dt=Math.min((now-lastTime)/1000||0,.06);lastTime=now;if
  else if(target){const tdx=target.x-p.x,tdy=target.y-p.y,dist=Math.hypot(tdx,tdy),step=dt*42;if(dist<=step){p.x=target.x;p.y=target.y;const node=target.node;target=null;updatePosition();setMotion(false,0);const done=arrival;arrival=null;if(node)inspect(node);save();if(done)done(true)}else{p.x+=tdx/dist*step;p.y+=tdy/dist*step;updatePosition();setMotion(true,tdx)}}
  else setMotion(false,0);
 }requestAnimationFrame(tick)}
-function journal(){cancelMove();const content=$('journal-content');content.replaceChildren();if(game.goal){const task=document.createElement('p');task.className='journal-task';task.textContent=game.goal.stage+' · '+game.objective();content.append(task)}Story.chapters.forEach((c,i)=>{if(i>game.state.chapter)return;const h=document.createElement('h3');h.className='journal-chapter';h.textContent=c.roman+' / '+c.title;content.append(h);const memories=game.state.memories.filter(k=>Story.memories[k].chapter===i);if(!memories.length){const p=document.createElement('p');p.className='fine';p.textContent='這一頁，還在等待故事。';content.append(p)}for(const k of memories){const m=Story.memories[k],card=document.createElement('article'),title=document.createElement('h3'),p=document.createElement('p');card.className='memory-card';title.textContent=m.title;p.textContent=m.text;card.append(title,p);content.append(card)}const chosen=game.state.choices['c'+(i+1)];if(chosen){const p=document.createElement('p');p.className='fine';p.textContent='留下的選擇：'+Story.choiceNames[chosen];content.append(p)}});$('journal-dialog').showModal()}
+function journal(){cancelMove();$('journal-dialog').querySelector('.dialog-notice')?.remove();const content=$('journal-content');content.replaceChildren();if(game.goal){const task=document.createElement('p');task.className='journal-task';task.textContent=game.goal.stage+' · '+game.objective();content.append(task)}Story.chapters.forEach((c,i)=>{if(i>game.state.chapter)return;const h=document.createElement('h3');h.className='journal-chapter';h.textContent=c.roman+' / '+c.title;content.append(h);const memories=game.state.memories.filter(k=>Story.memories[k].chapter===i);if(!memories.length){const p=document.createElement('p');p.className='fine';p.textContent='這一頁，還在等待故事。';content.append(p)}for(const k of memories){const m=Story.memories[k],card=document.createElement('article'),title=document.createElement('h3'),p=document.createElement('p');card.className='memory-card';title.textContent=m.title;p.textContent=m.text;card.append(title,p);content.append(card)}const chosen=game.state.choices['c'+(i+1)];if(chosen){const p=document.createElement('p');p.className='fine';p.textContent='留下的選擇：'+Story.choiceNames[chosen];content.append(p)}});$('journal-dialog').showModal()}
 function download(){const blob=new Blob([JSON.stringify(game.state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='unfinished-night-journey.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('旅程存檔已準備下載。')}
 function help(){show({speaker:'如何在畫境裡旅行',text:['點擊地標，旅人會走近並開啟對話。也可用 WASD 或方向鍵移動，靠近地標後按 E；手機可點地標或使用右下方向按鈕。','每章有兩個探索區域，可從畫面上方切換；標有「線索」的區域包含下一項目標。畫面右上的「當前線索」會隨進度改變。卡住時按「問問墨」；謎題裡也能重讀線索。','借色會暫時改變來源。完成修復後，顏色會歸還或安放到新位置。選擇沒有倒數，請慢慢讀。','旅程會自動儲存在這個瀏覽器。從「旅人手記」下載存檔，就能換到另一台裝置繼續。按 Esc 可關閉對話。'],choices:[]})}
 function sound(){if(audioOn){audioOn=false;clearInterval(audioTimer);if(audioGain)audioGain.gain.setTargetAtTime(0,audioCtx.currentTime,.5);$('sound-btn').textContent='♫';$('sound-btn').setAttribute('aria-label','開啟環境音');return}try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error();if(!audioCtx){audioCtx=new AC();audioGain=audioCtx.createGain();audioGain.gain.value=0;audioGain.connect(audioCtx.destination)}audioCtx.resume();audioOn=true;audioGain.gain.setTargetAtTime(.11,audioCtx.currentTime,.5);const play=()=>{if(document.hidden)return;const t=audioCtx.currentTime,notes=[146.83,174.61,220,261.63,293.66];[0,1,2].forEach((n)=>{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sine';osc.frequency.value=notes[(game.state.chapter+n*2)%notes.length];gain.gain.setValueAtTime(0,t+n*.8);gain.gain.linearRampToValueAtTime(.12,t+n*.8+1.5);gain.gain.exponentialRampToValueAtTime(.001,t+n*.8+6);osc.connect(gain);gain.connect(audioGain);osc.start(t+n*.8);osc.stop(t+n*.8+7)})};play();audioTimer=setInterval(play,7000);$('sound-btn').textContent='♪';$('sound-btn').setAttribute('aria-label','關閉環境音')}catch(e){toast('這個瀏覽器暫時無法播放環境音。')}}
@@ -114,6 +121,8 @@ for(const btn of document.querySelectorAll('[data-dir]')){const key={up:'ArrowUp
 for(let i=0;i<14;i++){const dot=document.createElement('i');dot.className='mote';dot.style.left=(7+i*6.5)%100+'%';dot.style.top=(30+i*13)%93+'%';dot.style.animationDelay=(-i*.9)+'s';$('motes').append(dot)}
 // Optional structured access uses the same visible journey state. No AI runtime dependency.
 const context=document.modelContext;if(context?.registerTool){const controller=new AbortController();for(const tool of [{name:'read_journey',title:'讀取畫境旅程',description:'Read the current chapter, objective and collected memories without changing the journey.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute(input){if(!input||typeof input!=='object'||Object.keys(input).length)throw Error('Expected an empty object.');return {chapter:game.chapter.title,objective:game.objective(),memories:game.state.memories.map(k=>Story.memories[k].title),finished:game.state.finished}}}]){try{Promise.resolve(context.registerTool(tool,{signal:controller.signal})).catch(()=>{})}catch(e){}}window.addEventListener('pagehide',()=>controller.abort(),{once:true})}
+const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');let skyPaused=motionQuery.matches;
+function updateSky(){const stopped=skyPaused||motionQuery.matches;$('title-screen').classList.toggle('sky-paused',stopped);$('sky-motion-btn').textContent=stopped?'播放星空':'暫停星空';$('sky-motion-btn').setAttribute('aria-pressed',String(!stopped));$('sky-motion-btn').disabled=motionQuery.matches;if(motionQuery.matches)$('sky-motion-btn').textContent='星空已靜止'}
+$('sky-motion-btn').onclick=()=>{skyPaused=!skyPaused;updateSky()};motionQuery.addEventListener('change',updateSky);updateSky();
 title();requestAnimationFrame(tick);
 })();
-

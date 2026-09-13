@@ -2,12 +2,23 @@
 const Story=root.NightStory||(typeof require==='function'?require('./story.js'):null);
 const Journey=root.NightJourney||(typeof require==='function'?require('./journey.js'):null);
 Journey.install(Story);
-const initial=()=>({version:1,contentVersion:2,region:0,chapter:0,started:false,finished:false,flags:{},choices:{},pigments:[],memories:[],position:{x:50,y:82}});
+const SAVE_VERSION=2;
+// Schema migrations are separate from story progression. Never mutate an import.
+const migrations={1:raw=>({...raw,version:2,contentVersion:raw.contentVersion??1,region:raw.region??0})};
+const initial=()=>({version:SAVE_VERSION,contentVersion:2,region:0,chapter:0,started:false,finished:false,flags:{},choices:{},pigments:[],memories:[],position:{x:50,y:82}});
 const say=(id,label,run,detail)=>({id,label,run,detail});
 class Game{
  constructor(state){this.state=state?Game.validate(state):initial();this.actions=new Map();this.view=null;this.puzzle=null;}
+ static migrate(raw){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)||!Number.isInteger(raw.version)||raw.version<1)throw Error('這不是相容的旅程存檔。');
+  if(raw.version>SAVE_VERSION)throw Error('這份存檔來自較新的遊戲版本。請更新遊戲後再匯入；原存檔仍可保留。');
+  let migrated={...raw};
+  while(migrated.version<SAVE_VERSION){const upgrade=migrations[migrated.version];if(!upgrade)throw Error('缺少這份存檔的升級方式。');migrated=upgrade(migrated)}
+  return migrated;
+ }
  static validate(raw){
-  if(!raw||raw.version!==1||!Number.isInteger(raw.chapter)||raw.chapter<0||raw.chapter>4||typeof raw.started!=='boolean'||typeof raw.finished!=='boolean')throw Error('這不是相容的旅程存檔。');
+  raw=Game.migrate(raw);
+  if(!Number.isInteger(raw.chapter)||raw.chapter<0||raw.chapter>4||typeof raw.started!=='boolean'||typeof raw.finished!=='boolean')throw Error('這不是相容的旅程存檔。');
   if(!raw.flags||typeof raw.flags!=='object'||Array.isArray(raw.flags)||Object.keys(raw.flags).length>150)throw Error('存檔的事件資料不完整。');
   if(Object.entries(raw.flags).some(([k,v])=>!/^c[1-5]_[a-z_]+$/.test(k)||typeof v!=='boolean'))throw Error('存檔含有無效事件。');
   if(!Array.isArray(raw.memories)||raw.memories.length>Object.keys(Story.memories).length||raw.memories.some(k=>!Object.hasOwn(Story.memories,k))||new Set(raw.memories).size!==raw.memories.length)throw Error('存檔的記憶資料無效。');
@@ -17,9 +28,9 @@ class Game{
   for(let i=0;i<raw.chapter;i++)if(!raw.choices['c'+(i+1)])throw Error('存檔缺少前一章的結局。');
   if(raw.finished&&(!raw.choices.c5||raw.chapter!==4))throw Error('結局資料不完整。');
   if(!raw.position||!Number.isFinite(raw.position.x)||!Number.isFinite(raw.position.y)||raw.position.x<0||raw.position.x>100||raw.position.y<0||raw.position.y>100)throw Error('存檔的位置無效。');
-  if(raw.contentVersion!==undefined&&![1,2].includes(raw.contentVersion))throw Error('這份存檔來自不支援的故事版本。');
-  if(raw.region!==undefined&&(!Number.isInteger(raw.region)||raw.region<0||raw.region>1))throw Error('探索區域資料無效。');
-  return {version:1,contentVersion:raw.contentVersion||1,region:raw.contentVersion===2?(raw.region||0):0,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
+  if(![1,2].includes(raw.contentVersion))throw Error('這份存檔來自不支援的故事版本。');
+  if(!Number.isInteger(raw.region)||raw.region<0||raw.region>1)throw Error('探索區域資料無效。');
+  return {version:SAVE_VERSION,contentVersion:raw.contentVersion,region:raw.contentVersion===2?raw.region:0,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
  }
  get chapter(){return Story.chapters[this.state.chapter]}
  get expanded(){return this.state.contentVersion>=2}
@@ -193,4 +204,3 @@ class Game{
 }
 root.NightGame=Game;if(typeof module!=='undefined')module.exports=Game;
 })(typeof globalThis!=='undefined'?globalThis:this);
-

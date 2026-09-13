@@ -1,0 +1,9 @@
+{
+  "name": "unfinished-night",
+  "private": true,
+  "scripts": {
+    "test": "node tests/progression.cjs && node tests/save-migrations.cjs",
+    "test:ui": "node tests/run-ui.mjs"
+  },
+  "devDependencies": { "playwright": "1.62.1" }
+}

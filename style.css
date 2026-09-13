@@ -22,3 +22,20 @@
 .puzzle-grid button[aria-pressed="true"]{border-color:var(--gold);background:#5e512f;color:#fff0c4}.puzzle-grid button[aria-pressed="true"]::before{content:'✓ ';}.puzzle-clue,.journal-task{font-size:15px;line-height:1.9;padding:15px;border-left:2px solid var(--gold);background:#e6c67808;color:#e6dfce}.puzzle-clue{margin-top:18px}
 @media(max-width:800px){.journey-strip{flex-direction:column;align-items:stretch;padding:11px 4%;gap:10px}#region-nav{display:grid;grid-template-columns:1fr 1fr}.region-button{padding:10px 8px;font-size:14px;min-height:46px}#chapter-phase{font-size:16px}.phase-label{display:none}#world{height:calc(100svh - 300px);min-height:460px}.hotspot-label{max-width:128px}.quest{max-width:185px}}
 @media(max-width:460px){#world{height:calc(100svh - 321px);min-height:450px}.quest{max-width:150px}.quest p{font-size:13px}.hotspot-label{font-size:13px;max-width:115px}.chapter-label h2{font-size:22px}.assignment-row{grid-template-columns:1fr}.assignment-row select{width:100%}.puzzle-grid{gap:8px}.puzzle-grid button{font-size:15px;padding:12px}.region-hint{font-size:12px}.region-button{font-size:13px}}
+
+/* Rotate only softly masked sky paint; the town and title stay still. */
+.title-sky{position:absolute;inset:0;z-index:-2;overflow:hidden;pointer-events:none;mask-image:linear-gradient(#000 0%,#000 42%,transparent 72%)}
+.sky-vortex{position:absolute;aspect-ratio:1;background-image:url('assets/night.jpg');background-repeat:no-repeat;background-size:235% auto;background-position:84% 6%;border-radius:50%;mask-image:radial-gradient(circle,#000 12%,#000c 32%,transparent 68%);opacity:.85;animation:sky-turn 100s linear infinite;will-change:transform}
+.sky-vortex-main{width:min(66vw,90vh);left:39%;top:-16%;}
+.sky-vortex-small{width:min(38vw,53vh);left:76%;top:-12%;background-position:99% 0%;animation-duration:75s;animation-direction:reverse;opacity:.65}
+@keyframes sky-turn{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.sky-paused .sky-vortex,#title-screen[hidden] .sky-vortex{animation-play-state:paused}
+.title-tools{display:flex;align-items:center;gap:8px;letter-spacing:normal}
+#sky-motion-btn{font-size:12px;color:var(--muted)}
+/* Keep button focus rings. Replace the full-map ring with a small keyboard cue. */
+#world:focus-visible{outline:none}
+#world:focus-visible #map-hint{color:var(--paper);background:#101c30d9;text-decoration:underline;text-underline-offset:4px;padding:8px 10px;border-radius:4px}
+.puzzle-feedback,.dialog-notice{color:#ffdfce;background:#4b2833;border-left:3px solid #f1ab88;padding:12px 16px;font-size:15px;line-height:1.8;overflow-wrap:anywhere;scroll-margin:16px;margin:16px 0}
+.puzzle-feedback:empty,.puzzle-clue:empty{margin:0;padding:0;border:0;min-height:0}
+@media(max-width:800px){.title-tools{gap:0}.title-tools .quiet{padding:10px 7px}.sky-vortex-main{width:95vw;left:22%;top:0}.sky-vortex-small{width:60vw;left:64%;top:4%}#world:focus-visible #map-hint{display:block;bottom:70px;right:14px;max-width:185px;font-size:11px}}
+@media(prefers-reduced-motion:reduce){.sky-vortex{animation:none!important;will-change:auto}}

@@ -76,4 +76,8 @@ V 空白海：以藍、綠、黃暫時修補裂口。與墨約定輪流記住，
 
 程式維護：journey.js 管理增補事件、前置條件、地圖分區、額外謎題、開章回聲與結局增補；engine.js 保留原主線與原五題，呼叫 Journey 的明確介面。不要把新增條件分散到純 UI 按鈕裡。game.js 負責區域選擇、每兩段對話分頁、多選／配對控制，以及保留原提示的泛用謎題面板。
 
-存檔格式 version 仍為 1，新增 contentVersion 與 region。新遊戲 contentVersion=2；舊檔缺少該欄時正規化為 1，當章沿用原有流程，advance 時切換為 2。六份更新前的真實格式存檔固定在 tests/legacy-saves.json，避免後續改版讓已有旅程卡關。不要直接把所有舊存檔強制當成增補版。
+存檔格式已升至 version 2；Game.migrate 透過 migrations 表將 version 1 升級，然後才做欄位驗證。升級只在新物件進行，不修改原匯入內容。contentVersion 與 region 分別描述故事流程及探索區域。新遊戲 contentVersion=2；version 1 舊檔缺少該欄時在遷移中補為 1，當章沿用原有流程，advance 時切換為 2。六份更新前的真實格式存檔固定在 tests/legacy-saves.json，避免後續改版讓已有旅程卡關。不要直接把所有舊存檔強制當成增補版。
+
+### 介面回歸
+
+GitHub Actions 執行 tests/run-ui.mjs：用全新 Chromium context 跑桌面、390px 手機尺寸與減少動態三組。ui-regression.mjs 共用真實 UI 流程，不注入遊戲狀態。存檔遷移另由 tests/save-migrations.cjs 檢查。日後增加格式版本，必須新增相鄰版本的遷移函式與舊資料 fixture；不要直接更改版本數字而拿掉既有遷移。
