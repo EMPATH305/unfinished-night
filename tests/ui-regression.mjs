@@ -6,14 +6,17 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  const button=name=>page.getByRole('button',{name,exact:true});
  const click=async name=>{await button(name).click()};
  const dialog=page.locator('#story-dialog').first();
- const readAll=async()=>{try{await dialog.waitFor({state:'visible',timeout:5000})}catch(e){return};for(let i=0;i<12&&await button('繼續讀').isVisible();i++)await click('繼續讀')};
- const close=async()=>{await click('關閉對話');try{await dialog.waitFor({state:'hidden',timeout:2000})}catch(e){}};
+ const readAll=async()=>{await dialog.waitFor({state:'visible'});for(let i=0;i<12&&await button('繼續讀').isVisible();i++)await click('繼續讀')};
+ const close=async()=>{await click('關閉對話');await dialog.waitFor({state:'hidden'})};
  const visit=async name=>{await click('探索'+name);await readAll()};
  const region=async name=>{const plain=button(name);await (await plain.isVisible()?plain:button(name+' · 線索')).click()};
  const query=fn=>page.evaluate(fn);
  const sky=()=>query(()=>{const el=document.querySelector('.sky-vortex-main'),css=getComputedStyle(el);return {transform:css.transform,name:css.animationName,play:css.animationPlayState}});
+ check(!await page.locator('#story-dialog').isVisible()&&!await page.locator('#journal-dialog').isVisible(),'Closed dialogs must be hidden, including on mobile');
  const first=await sky();
  check(first.name==='sky-turn'||first.name==='none','Sky animation is missing');
+ if(first.name==='none')check(await button('星空已靜止').isVisible()&&!await button('星空已靜止').isEnabled(),'Reduced motion must stop animation and disable playback');
+ check(await query(()=>document.documentElement.scrollWidth<=innerWidth),'Title must fit the viewport without horizontal clipping');
  if(await button('暫停星空').isVisible()){
   await click('暫停星空');check((await sky()).play==='paused','Pause must stop the sky');
   await click('播放星空');check((await sky()).play==='running','Resume must restart the sky');
@@ -30,6 +33,7 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  await click('探索製燈人的燈');
  if(first.name!=='none')await page.locator('#traveler.walking').waitFor({state:'attached'});
  const motion=await query(()=>{const t=document.querySelector('#traveler');return {walking:t.classList.contains('walking'),name:getComputedStyle(t.querySelector('.traveler-core')).animationName}});
+ if(first.name==='none')check(motion.name==='none','Reduced motion must suppress the walking animation');
  if(first.name!=='none')check(motion.walking&&motion.name.includes('walk-bob'),'Landmark movement should animate the traveler');
  await readAll();check((await query(()=>document.querySelector('#traveler').style.top))!==before,'Traveler must reach the landmark');
  await click('借取燈中的黃色 燈會暫時暗下來。');await close();

@@ -32,6 +32,7 @@ class Game{
   if(!Number.isInteger(raw.region)||raw.region<0||raw.region>1)throw Error('探索區域資料無效。');
   return {version:SAVE_VERSION,contentVersion:raw.contentVersion,region:raw.contentVersion===2?raw.region:0,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
  }
+ memoryText(key){return Journey.memoryText(this,key,Story.memories[key].text)}
  get chapter(){return Story.chapters[this.state.chapter]}
  get expanded(){return this.state.contentVersion>=2}
  get regions(){return this.expanded?this.chapter.regions:[{name:'原有旅程',ids:this.chapter.nodes.map(n=>n[0])}]}
@@ -73,19 +74,19 @@ class Game{
    return this.show('墨',['「這口井借給你藍，就暫時失去倒影。別把失去顏色的地方，當成原本就空無一物。」'],[say('borrow-blue','借取井中的藍色',()=>{this.flag('c1_blue');this.take('blue');return this.show('凝止之藍','井裡的星光消失了。你獲得暫時凝止流動之物的能力。')})]);
   }
   if(id==='letter'){
-   if(this.has('c1_letter'))return this.show('褪色的信',Story.memories.letter.text);
+   if(this.has('c1_letter'))return this.show('褪色的信',this.memoryText('letter'));
    if(!this.carries('yellow'))return this.show('褪色的信','信紙上只剩一個「爸」。需要一點黃色，才能照見消失的墨跡。製燈人或許願意借你一點光。');
-   return this.show('褪色的信','你把手心靠近紙張。金色沿著原本的筆跡緩緩移動。',[say('reveal','用黃色照亮信件',()=>{this.flag('c1_letter');this.use('yellow');this.remember('letter');return this.show('艾菈留下的話',[Story.memories.letter.text,'讀完後，你將借來的黃色沿著燈線送回。製燈人的窗重新亮了。'])})]);
+   return this.show('褪色的信','你把手心靠近紙張。金色沿著原本的筆跡緩緩移動。',[say('reveal','用黃色照亮信件',()=>{this.flag('c1_letter');this.use('yellow');this.remember('letter');return this.show('艾菈留下的話',[this.memoryText('letter'),'讀完後，你將借來的黃色沿著燈線送回。製燈人的窗重新亮了。'])})]);
   }
   if(id==='keeper'){
-   if(this.has('c1_keeper'))return this.show('守夜人 · 索恩',c?['他從鐘樓走了下來。這次，居民能直接問他問題。','墨小聲說：「把高處的決定，帶回人群裡。這也算一種修復。」']:Story.memories.clock.text);
+   if(this.has('c1_keeper'))return this.show('守夜人 · 索恩',c?['他從鐘樓走了下來。這次，居民能直接問他問題。','墨小聲說：「把高處的決定，帶回人群裡。這也算一種修復。」']:this.memoryText('clock'));
    if(!this.carries('blue'))return this.show('流動的裂縫','鐘樓外的裂痕像河水流動，切斷了道路。先從靜藍井借取藍色，才能讓你安全通過。');
-   return this.show('鐘樓外',[ '裂縫裡傳來無數個同一天的鐘聲。你可以借藍色，讓它暫時停下。'],[say('freeze','凝止裂縫，走進鐘樓',()=>{this.use('blue');this.flag('c1_keeper');this.remember('clock');return this.show('守夜人 · 索恩',[Story.memories.clock.text,'「我救過他們。」他緊握鐘錘。「如果放手後又失去誰，我要怎麼承受？」','你離開時取回凝止裂縫的藍，送回井中。道路仍危險；現在你知道鐘樓裡住著誰。'])})]);
+   return this.show('鐘樓外',[ '裂縫裡傳來無數個同一天的鐘聲。你可以借藍色，讓它暫時停下。'],[say('freeze','凝止裂縫，走進鐘樓',()=>{this.use('blue');this.flag('c1_keeper');this.remember('clock');return this.show('守夜人 · 索恩',[this.memoryText('clock'),'「我救過他們。」他緊握鐘錘。「如果放手後又失去誰，我要怎麼承受？」','你離開時取回凝止裂縫的藍，送回井中。道路仍危險；現在你知道鐘樓裡住著誰。'])})]);
   }
   if(id==='star'){
    if(c)return this.show('星辰',c==='dawn'?'星星終於完成了一次旋轉。遠處的天空，開始有很淡的金色。':'星空維持緩慢的循環。鐘樓下多了一張公開記錄：每次修補，都必須讓居民知道。');
    if(!this.has('c1_letter')||!this.has('c1_keeper'))return this.show('失速的星辰',['三枚星鐘刻著燈、月、星的圖案。墨擋住你的手。','「先讀那封信，也聽聽守夜人的說法。修復之前，總得知道你在改變誰的生活。」']);
-   if(!this.has('c1_tuned'))return this.show('星鐘的次序','依照信裡的提示，喚醒三枚星鐘。順序可以在旅人手記裡重讀。',[],{kind:'sequence',id:'stars',items:['星','燈','月','鐘'],length:3});
+   if(!this.has('c1_tuned'))return this.show('星鐘的次序',this.expanded?'把信裡的半句筆記與索恩記得的規則合在一起，推得三種光的先後。可在手記分別重讀兩份證詞。':'依照信裡的提示，喚醒三枚星鐘。順序可以在旅人手記裡重讀。',[],{kind:'sequence',id:'stars',items:['星','燈','月','鐘'],length:3});
    return this.show('星空等待你的回答',['索恩召集居民，說出了循環的代價。有人害怕黎明，有人已經不願再過同一天。','兩條路都需要持續照顧。你能做的是先幫他們準備，而不是替他們保證永遠安全。'],[say('night','知情地延續星夜',()=>this.decide('c1','night',['居民決定暫留在星夜裡，輪流記錄名字與修補的代價。','你協助索恩建立公開的星鐘記錄。製燈人第一次讀懂女兒留下的信。去和他說說話，再踏上麥田小徑。']),'暫時維持小鎮，但停止隱瞞循環的磨損。'),say('dawn','一起準備，迎接黎明',()=>this.decide('c1','dawn',['你與居民加固屋簷，把借來的顏色歸還。索恩鬆開鐘錘。','第一縷晨光裡，製燈人收起了燈。去看看他的回應，再踏上麥田小徑。']),'結束循環，小鎮開始學習面對未知。')]);
   }
   if(id==='gate')return c?this.show('麥田小徑',['墨最後數了一次窗裡的人。「都還在。現在我們去找那個自己走出去的人。」'],[say('next','走向岔路麥原',()=>this.advance())]):this.show('麥田小徑','星鐘還沒得到回答。先查清信件與鐘樓的祕密，完成小鎮的選擇。');

@@ -47,6 +47,13 @@ function install(Story){
  Object.assign(Story.memories,memories);
  Story.chapters.forEach((chapter,i)=>{chapter.regions=regions[i];chapter.expansionNodes=extraNodes[i];});
 }
+function memoryText(g,key,fallback){
+ if(!g.expanded)return fallback;
+ if(key==='letter')return '製燈人的女兒艾菈寫道：「爸，我不是被帶走的。我想知道麥田後面是什麼。要是鐘又停了，請別把等待當成我的意願。」信角只剩半句維修筆記：「窗裡的燈，要比水中的月先醒。」另一半被雨洗掉了。';
+ if(key==='clock')return fallback+' 索恩記得星鐘的另一條規則：「月沒有亮起以前，星就不能動。那枚刻著鐘的牌只是外殼，不是要喚醒的光。」';
+ if(key==='footprints')return ['羽毛沾著溪邊的藍泥和舊鐘的金粉，沒有路牌的木屑。它證明艾菈走過那裡，卻沒有替地標編號。',g.has('c2_traveler')?'旅人的目擊：她敲過舊鐘，才走向遠山。':'尚未核對：沒有影子的旅人看見了什麼？',g.has('c2_brook')?'溪邊物證：乾掉的藍泥在金粉下面，溪水留下的痕跡較早。':'尚未核對：溪邊的痕跡能分出先後嗎？'].join(' ');
+ return fallback;
+}
 function askPuzzle(g,id,title,text){const {answer,...p}=puzzles[id];return g.show(title,text,[],p)}
 function intro(g){
  if(g.state.contentVersion<2)return g.chapter.intro;
@@ -83,7 +90,7 @@ function goal(g){
   if(!f('c2_feather'))return at('一 · 不可靠的承諾','feather','尋找沾泥的羽毛。');
   if(!f('c2_traveler'))return at('一 · 不可靠的承諾','traveler','聽聽沒有影子的旅人為何停下。');
   if(!f('c2_brook'))return at('二 · 腳印與倒影','brook','在溪邊核對艾菈的腳印。');
-  if(!f('c2_path'))return at('二 · 腳印與倒影','path','依路記穿過會移動的岔路。');
+  if(!f('c2_path'))return at('二 · 腳印與倒影','path','合併旅人的目擊與溪邊物證，推得地標先後。');
   if(!f('c2_anchors'))return at('三 · 回頭的條件','markers','用能核對的痕跡，固定雙向路樁。');
   if(!c.c2)return at('三 · 回頭的條件','daughter','去營火旁，讓艾菈決定自己的消息。');
   if(!f('c2_dispatch'))return at('四 · 收信的人','post','到回信站，聽路另一端的回答。');
@@ -144,6 +151,23 @@ function event(g,id){
   if(id==='star'&&f('c1_tuned')&&!c.c1&&!f('c1_assembly'))return wait('星鐘停在你的手前','鐘聲已能轉動，但居民還沒參與。'+goal(g).text);
   break;
  case 1:
+  if(id==='feather'){g.flag('c2_feather');g.remember('footprints');return g.show('沒有編號的路記',[memoryText(g,'footprints',''),'墨翻過羽毛。「找到三個名字，不等於知道先後。去問見過她的人，也去看不會替人說話的泥。」']);}
+  if(id==='traveler'){
+   const seen=f('c2_traveler');g.flag('c2_traveler');
+   if(f('c2_dispatch'))return g.show('費恩留給下一個人的位置',[c.c2==='letter'?'他把一張空白回信紙放進路樁的小盒子。「也許下一個人想寄信，卻還沒想好第一句。」':'他正在重描朝向小鎮的箭頭。「去路有人問，回來的路也該有人照顧。」','他不再等那個從未選錯的自己。今天只要把這根路樁顧好，就有一件確實做過的事。']);
+   if(f('c2_anchors'))return g.show('費恩與鞋底的泥',['他的鞋終於弄髒了，影子淡淡地落在腳邊。「我還是怕後悔。但走到下一根路樁，好像不用先把一生決定完。」','他用鞋尖壓住路樁底下的鬆土，請你去聽艾菈的回答。']);
+   return g.show('沒有影子的旅人',seen?['「我能保證的只有這一段：她敲過舊鐘，才往遠山走。我沒看見她怎麼到鐘那裡。」','他看著你手上的筆。「把我沒看見的，也寫下來。別讓我的話看起來比它知道的多。」']:['「我在等那個沒有選錯的自己。」他的鞋像從未走過路，目光卻一直追著遠處的營火。','問起艾菈，他只肯說親眼看見的部分：「她敲過舊鐘，才走向遠山。到鐘以前去了哪裡，我不知道。」','墨沒有催他同行。「這一段就夠了。還缺的，去問泥土。」']);
+  }
+  if(id==='sign')return g.show('三面路牌',f('c2_dispatch')?['「最安全」仍在換方向。但牌柱底下多了費恩寫的小字：「這邊有能回信的地方。不能保證沒有失落。」','他沒有再給路一個完美的名字，只把能驗證的事情留下。']:f('c2_path')?['路牌還在旋轉，地上的路卻不再跟著移動。你知道自己依靠的是目擊與物證，不是牌子如何稱讚自己。','墨啄了一下空白的中間那面。「這塊倒是很誠實。」']:['「最安全」「最快到」輪流指向不同方向。沒有一面寫著艾菈真正走過哪裡。','牌柱沒有藍泥與金粉留下的痕跡。把承諾當成地標，會多走一條沒有證據的路。']);
+  if(id==='brook'){
+   const seen=f('c2_brook');g.flag('c2_brook');
+   if(c.c2)return g.show('溪水仍留著另一種生活',[c.c2==='letter'?'水面映出亞恩收到信後立刻微笑的樣子。你知道真正的信裡，還有生氣與思念。':'倒影裡，所有人都沿著路標回家。真實的艾菈仍在遠行，而返程的箭頭也還在。','這次你沒有請墨丟石頭。你看了一會兒，自己把目光移回腳下。']);
+   return g.show('溪水與倒影',seen?['你再次翻看腳印邊剝落的泥殼：金粉黏在乾掉的藍泥外層。溪水的痕跡先留下，舊鐘的金粉才覆上去。','倒影又替你安排了一種不會後悔的生活。你把先後記在紙上，沒有把倒影也當成證人。']:['溪底映著你從未離開修復室的生活。那個你看起來很平靜，卻沒有走過腳下這條路。','你蹲下翻看一片鞋印脫落的泥殼：溪邊的藍泥已乾，外層才黏上舊鐘的金粉。兩種痕跡不是同時留下的。','墨把石子投進倒影。「看清楚誰在裡面、誰在外面。它們留下的是先後，不是好壞。」']);
+  }
+  if(id==='path'&&!f('c2_path')){
+   if(!f('c2_feather')||!f('c2_traveler')||!f('c2_brook'))return wait('還缺一段能核對的先後','羽毛只留下材料，沒有完整的次序。先合併沒有影子的旅人的目擊，以及溪邊泥殼內外層的證據。');
+   return g.show('把不同的證詞接成一條路','三個地標各走一次。結合旅人的目擊與泥殼的內外層，推得艾菈走過的順序；沒有證據的承諾不列入路線。',[],{kind:'sequence',id:'roads',items:['遠山','舊鐘','溪水','路牌'],length:3});
+  }
   if(id==='markers'){
    if(f('c2_anchors'))return wait('朝兩個方向刻記號的路樁','路樁上的箭頭朝向營火，也朝向來時的麥田。費恩坐在旁邊，第一次把鞋底放進溪泥裡。');
    if(!f('c2_path')||!f('c2_brook')||!f('c2_traveler'))return wait('倒下的路樁','只釘一個方向，路就會在身後消失。先聽旅人的話、在溪邊核對腳印，並穿過岔路，才知道哪一條是走過的路。');
@@ -229,5 +253,5 @@ function solve(g,input){
  const [flag,memory,title,text]=outcomes[p.id];if(p.id==='anchors')g.remember('traveler_note');return {ok:true,view:done(g,flag,memory,title,text)};
 }
 function ending(g,text){if(g.state.contentVersion<2)return text;const result=[...text];result.splice(result.length-1,0,g.has('c4_margin')?'你的更正註記也留在共同紀錄裡。多年以後，有人沿著那條註記找到新的證據，能繼續修改你的答案。':'你的修復手稿仍有空白。後來的人在旁邊補上新證據，沒有因此刪掉你當時承認不知道的那一行。','費恩維護著麥原的一根路樁；瑪拉將母親分麵包的手勢教給下一個人。世界沒有被一次修好，卻開始容得下更多接手的人。');return result;}
-root.NightJourney={install,regions,extraNodes,intro,goal,event,solve,readyToLeave,ending};if(typeof module!=='undefined')module.exports=root.NightJourney;
+root.NightJourney={install,regions,extraNodes,intro,goal,event,solve,readyToLeave,ending,memoryText};if(typeof module!=='undefined')module.exports=root.NightJourney;
 })(typeof globalThis!=='undefined'?globalThis:this);
