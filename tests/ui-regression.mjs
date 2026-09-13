@@ -5,7 +5,7 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  const check=(ok,message)=>{if(!ok)throw Error(message)};
  const button=name=>page.getByRole('button',{name,exact:true});
  const click=async name=>{await button(name).click()};
- const dialog=page.getByRole('dialog');
+ const dialog=page.locator('#story-dialog');
  const readAll=async()=>{await dialog.waitFor({state:'visible'});for(let i=0;i<12&&await button('繼續讀').isVisible();i++)await click('繼續讀')};
  const close=async()=>{await click('關閉對話');await dialog.waitFor({state:'hidden'})};
  const visit=async name=>{await click('探索'+name);await readAll()};
