@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium, webkit } from 'playwright';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
@@ -28,4 +28,8 @@ try{
   try{await page.goto('http://127.0.0.1:'+server.address().port);await runUIRegression(page,{report:line=>console.log(name+': '+line)});if(errors.length)throw Error(errors.join('\n'));}
   finally{await page.screenshot({path:'ui-'+name+'.png',fullPage:true});await context.close()}
  }
+ await browser.close();browser=await webkit.launch();
+ const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ try{await page.goto('http://127.0.0.1:'+server.address().port);await runUIRegression(page,{report:line=>console.log('webkit-mobile: '+line)});if(errors.length)throw Error(errors.join('\n'));}
+ finally{await page.screenshot({path:'ui-webkit-mobile.png',fullPage:true});await context.close()}
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}

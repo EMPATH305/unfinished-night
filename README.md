@@ -67,7 +67,7 @@ GitHub Free 的 Pages 適用於公開儲存庫；採用公開儲存庫時，遊�
 
 已檢查 96 條完整增補路線（48 種主要決定 × 2 種手稿處理方式）、十個謎題、答錯恢復、分區導航、回訪前置條件、顏色歸還、二十五段記憶與存檔往返；六份更新前存檔也驗證能完成原章節並銜接新內容。若電腦裝有 Node.js，可執行 `node tests/progression.cjs` 重跑。
 
-介面回歸測試位於 tests/ui-regression.mjs，從主選單實際操作第一章，檢查星空暫停、分頁、焦點、走路、提示可見性、兩段式線索與決定色調。GitHub Actions 會在 main 更新和 PR 時執行劇情、存檔與桌面／手機尺寸／減少動態的 Chromium 測試，並保存截圖。可在電腦執行 `npm install`、`npx playwright install chromium`、`npm test`、`npm run test:ui`。這些套件僅供開發測試，遊戲仍可直接開啟 HTML。
+介面回歸測試位於 tests/ui-regression.mjs，從主選單實際操作第一章，檢查星空暫停、分頁、焦點、走路、提示可見性、兩段式線索與決定色調。GitHub Actions 會在 main 更新和 PR 時執行劇情、存檔與桌面／手機尺寸／減少動態的 Chromium 測試，並保存截圖。可在電腦執行 `npm install`、`npx playwright install chromium webkit`、`npm test`、`npm run test:ui`。這些套件僅供開發測試，遊戲仍可直接開啟 HTML。
 
 讀屏器實機、觸控裝置及真人遊戲節奏仍需另外驗收。選用的 WebMCP 讀取介面未在瀏覽器中驗證，不影響一般遊玩。
 
@@ -89,4 +89,4 @@ GitHub Free 的 Pages 適用於公開儲存庫；採用公開儲存庫時，遊�
 
 五章共新增 10 篇可選世界故事。造訪相關地標後可按「追問」，也能在手記的「畫境志」重讀。設定見 WORLD_EXPANSION.md：餘彩域、守框人、渡色者、拾遺者、乾潮與三處遠方傳聞。遠方地區尚未開放為新章節。
 
-測試加入 320px 小螢幕與橫向手機尺寸，以及畫境志與手機工具列操作。自動化瀏覽器測試不等同所有實體手機已驗收；Safari 與課堂實機體驗仍值得收集回饋。
+測試加入 320px 小螢幕與橫向手機尺寸，以及畫境志與手機工具列操作。自動化瀏覽器測試不等同所有實體手機已驗收；另以 WebKit 手機尺寸驗證 Safari 所用引擎的相容性；課堂實體裝置體驗仍值得收集回饋。
