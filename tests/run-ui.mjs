@@ -19,6 +19,8 @@ try{
  for(const mode of [
   {name:'desktop',viewport:{width:1366,height:900}},
   {name:'mobile',viewport:{width:390,height:844},isMobile:true,hasTouch:true},
+  {name:'compact',viewport:{width:320,height:740},isMobile:true,hasTouch:true},
+  {name:'landscape',viewport:{width:844,height:390},isMobile:true,hasTouch:true},
   {name:'reduced-motion',viewport:{width:1366,height:900},reducedMotion:'reduce'}
  ]){
   const {name,...options}=mode,context=await browser.newContext(options),page=await context.newPage();

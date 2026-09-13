@@ -81,3 +81,7 @@ V 空白海：以藍、綠、黃暫時修補裂口。與墨約定輪流記住，
 ### 介面回歸
 
 GitHub Actions 執行 tests/run-ui.mjs：用全新 Chromium context 跑桌面、390px 手機尺寸與減少動態三組。ui-regression.mjs 共用真實 UI 流程，不注入遊戲狀態。存檔遷移另由 tests/save-migrations.cjs 檢查。日後增加格式版本，必須新增相鄰版本的遷移函式與舊資料 fixture；不要直接更改版本數字而拿掉既有遷移。
+
+### 餘彩域與手機擴充
+
+atlas.js 保存十篇可選世界故事，以既有地標造訪旗標推導發現狀態。game.js 的追問只切換 UI，不取代 engine 的主線 actions；返回時仍可完成原互動。詳細設定與尚未開放的後續地區見 WORLD_EXPANSION.md。星空 source 座標擴至十一處，手機採底部工具列、可收起方向鍵與地點清單。
