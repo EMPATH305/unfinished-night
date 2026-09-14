@@ -141,3 +141,8 @@ dialog:not([open]){display:none}
 @keyframes trust-blank{from{opacity:0}to{opacity:1}}
 #trust-dialog[open],#trust-dialog[open]::backdrop{animation:trust-blank .65s ease-out}
 @media(prefers-reduced-motion:reduce){#trust-dialog[open],#trust-dialog[open]::backdrop{animation:none}}
+
+#trust-dialog .trust-question{display:grid;overflow-anchor:none}
+.trust-reserve,.trust-ink-text{grid-area:1 / 1}
+.trust-reserve{visibility:hidden;pointer-events:none}
+#trust-dialog button:hover{transform:none}

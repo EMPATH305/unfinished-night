@@ -35,7 +35,8 @@ function open(state,seal){
  d.append(make('p',final?'若願意，準備 A6 白紙（105 × 148 mm）、筆與實體信封。在現實書寫後封存；不必交給任何人。':'雙窗聽證所 · '+(page+1)+' / '+pages.length));
  if(final){const envelope=make('div');envelope.className='trust-envelope';envelope.setAttribute('aria-hidden','true');d.append(envelope)}
  const p=make(final?'blockquote':'p');p.className='trust-question';p.id=final?'trust-question':'trust-passage';p.setAttribute('aria-label',pages[page]);
- const visual=make('span');visual.setAttribute('aria-hidden','true');p.append(visual);
+ const reserve=make('span',pages[page]);reserve.className='trust-reserve';reserve.setAttribute('aria-hidden','true');
+ const visual=make('span');visual.className='trust-ink-text';visual.setAttribute('aria-hidden','true');p.append(reserve,visual);
  const actions=make('div');actions.className='trust-actions';
  let done=false;const proceed=btn(final?'我已在現實中封存第 '+(stage+1)+' 封信':'讀下一段',()=>{
  if(!done)return;proceed.disabled=true;stop();
