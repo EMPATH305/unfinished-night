@@ -124,3 +124,20 @@ dialog:not([open]){display:none}
 @keyframes trust-ink{from{color:transparent;text-shadow:0 0 12px #24334315}to{color:#243343;text-shadow:0 0 0 transparent}}
 @media(max-width:460px){#trust-dialog{padding:16px 18px}#trust-dialog .dialog-top{top:-16px;flex-wrap:wrap}#trust-dialog h2{font-size:25px}.trust-question{padding:22px 18px}.trust-scene p{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.trust-question.ink-arriving{animation:none}}
+
+
+/* The trust is an optional blank canvas, never an answer form. */
+#trust-dialog{width:min(920px,calc(100% - 20px));min-height:75dvh;max-height:calc(100dvh - 20px);background:#eeeade;color:#273341;border:1px solid #b9b6aa;isolation:isolate;padding:clamp(18px,4vw,48px)}
+#trust-dialog::backdrop{background:rgba(234,231,221,.96)}
+#trust-dialog .dialog-top{background:#eeeade;color:#273341}
+#trust-dialog h2,#trust-dialog p{color:#273341}
+#trust-dialog button{background:#e1dfd5;color:#273341;border:1px solid #727d84;min-height:44px}
+#trust-dialog [hidden]{display:none!important}
+#trust-dialog .trust-question{background:rgba(249,247,239,.8);line-height:2;min-height:130px;overflow-wrap:anywhere}
+#trust-dialog.trust-snow::before{content:'';position:absolute;inset:0;background:linear-gradient(#eeeadee6,#eeeadee0),url('assets/snow.jpg') center/cover;z-index:-1;pointer-events:none}
+#trust-dialog .trust-actions{gap:12px}
+
+.trust-envelope{width:148px;height:105px;margin:24px auto;border:1px solid #8e928f;background:linear-gradient(35deg,transparent 49.5%,#aaada5 50%,transparent 50.5%),linear-gradient(-35deg,transparent 49.5%,#aaada5 50%,transparent 50.5%),#f7f4e9;box-shadow:0 5px 20px #29364412}
+@keyframes trust-blank{from{opacity:0}to{opacity:1}}
+#trust-dialog[open],#trust-dialog[open]::backdrop{animation:trust-blank .65s ease-out}
+@media(prefers-reduced-motion:reduce){#trust-dialog[open],#trust-dialog[open]::backdrop{animation:none}}

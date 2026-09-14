@@ -84,5 +84,6 @@
   "position": {
     "x": 50,
     "y": 84
-  }
+  },
+  "blank_trust_stage": 5
 }

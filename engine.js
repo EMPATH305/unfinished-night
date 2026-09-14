@@ -7,7 +7,7 @@ Second.install(Story);
 const SAVE_VERSION=2;
 // Schema migrations are separate from story progression. Never mutate an import.
 const migrations={1:raw=>({...raw,version:2,contentVersion:raw.contentVersion??1,region:raw.region??0})};
-const initial=()=>({version:SAVE_VERSION,contentVersion:2,region:0,chapter:0,started:false,finished:false,flags:{},choices:{},pigments:[],memories:[],position:{x:50,y:82}});
+const initial=()=>({version:SAVE_VERSION,contentVersion:2,region:0,chapter:0,blank_trust_stage:0,started:false,finished:false,flags:{},choices:{},pigments:[],memories:[],position:{x:50,y:82}});
 const say=(id,label,run,detail)=>({id,label,run,detail});
 class Game{
  constructor(state){this.state=state?Game.validate(state):initial();this.actions=new Map();this.view=null;this.puzzle=null;}
@@ -20,6 +20,8 @@ class Game{
  }
  static validate(raw){
   raw=Game.migrate(raw);
+  const stage=raw.blank_trust_stage===undefined?0:raw.blank_trust_stage;
+  if(!Number.isInteger(stage)||stage<0||stage>6)throw Error('封信階段資料無效。');
   if(!Number.isInteger(raw.chapter)||raw.chapter<0||raw.chapter>7||typeof raw.started!=='boolean'||typeof raw.finished!=='boolean')throw Error('這不是相容的旅程存檔。');
   if(!raw.flags||typeof raw.flags!=='object'||Array.isArray(raw.flags)||Object.keys(raw.flags).length>250)throw Error('存檔的事件資料不完整。');
   if(Object.entries(raw.flags).some(([k,v])=>!/^c[1-8]_[a-z_]+$/.test(k)||typeof v!=='boolean'))throw Error('存檔含有無效事件。');
@@ -32,8 +34,9 @@ class Game{
   if(!raw.position||!Number.isFinite(raw.position.x)||!Number.isFinite(raw.position.y)||raw.position.x<0||raw.position.x>100||raw.position.y<0||raw.position.y>100)throw Error('存檔的位置無效。');
   if(![1,2,3].includes(raw.contentVersion)||(raw.chapter>=5&&raw.contentVersion!==3)||(raw.chapter<5&&raw.contentVersion===3))throw Error('這份存檔來自不支援的故事版本。');
   if(!Number.isInteger(raw.region)||raw.region<0||raw.region>1)throw Error('探索區域資料無效。');
-  return {version:SAVE_VERSION,contentVersion:raw.contentVersion,region:raw.contentVersion>=2?raw.region:0,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
+  return {version:SAVE_VERSION,blank_trust_stage:stage,contentVersion:raw.contentVersion,region:raw.contentVersion>=2?raw.region:0,chapter:raw.chapter,started:raw.started,finished:raw.finished,flags:{...raw.flags},choices:{...raw.choices},pigments:[...raw.pigments],memories:[...raw.memories],position:{...raw.position}};
  }
+ sealTrust(expected){if(expected!==this.state.blank_trust_stage||expected>=6||(expected===5&&this.state.chapter<6))return false;this.state.blank_trust_stage++;return true;}
  memoryText(key){return this.state.chapter>=5?Second.memoryText(this,key,Journey.memoryText(this,key,Story.memories[key].text)):Journey.memoryText(this,key,Story.memories[key].text)}
  get chapter(){return Story.chapters[this.state.chapter]}
  get expanded(){return this.state.contentVersion>=2}
@@ -209,4 +212,5 @@ class Game{
 }
 root.NightGame=Game;if(typeof module!=='undefined')module.exports=Game;
 })(typeof globalThis!=='undefined'?globalThis:this);
+
 

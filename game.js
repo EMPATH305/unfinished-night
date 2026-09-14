@@ -8,10 +8,10 @@ function toast(message){
  if(dialog){let notice=dialog.querySelector('.dialog-notice');if(!notice){notice=document.createElement('p');notice.className='dialog-notice';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');notice.setAttribute('aria-atomic','true');dialog.append(notice)}notice.textContent=message;notice.scrollIntoView({block:'nearest'});return}
  $('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{$('toast').classList.remove('show');$('toast').textContent=''},4800)
 }
-function save(){if(!game.state.started)return;try{localStorage.setItem(KEY,JSON.stringify(game.state));storageOK=true}catch(e){if(storageOK)toast('此瀏覽器無法自動存檔。請從手記下載存檔。');storageOK=false}}
+function save(){if(!game.state.started&&!game.state.blank_trust_stage)return;try{localStorage.setItem(KEY,JSON.stringify(game.state));storageOK=true}catch(e){if(storageOK)toast('此瀏覽器無法自動存檔。請從手記下載存檔。');storageOK=false}}
 function title(){active=false;cancelMove();$('title-screen').hidden=false;$('game-screen').hidden=true;$('continue-btn').hidden=!game.state.started;$('continue-btn').textContent=game.state.finished?'回到已完成的旅程':'繼續上次的旅程';$('save-info').textContent=game.state.started?(game.state.finished?(game.state.chapter===4?'第一部已完成 · 可從結局繼續遠行':'八章已完成 · 你的選擇已留在畫境'):'旅程停在第 '+game.chapter.roman+' 章 · '+game.chapter.title+(game.expanded?'':'（本章保留舊流程，下一章加入新內容）')):'八幅畫境 · 一位旅人 · 一隻記得你的烏鴉';$('start-btn').textContent=game.state.started?'開始一段新旅程':'走進畫裡 ↗'}
 function enter(){active=true;$('title-screen').hidden=true;$('game-screen').hidden=false;render();$('world').focus({preventScroll:true})}
-function newGame(){game=new Game();enter();show(game.start());save()}
+function newGame(){const stage=game.state.started?0:game.state.blank_trust_stage;game=new Game();game.state.blank_trust_stage=stage;enter();show(game.start());save()}
 function cancelMove(){target=null;keys.clear();if(arrival){arrival(false);arrival=null}setMotion(false,0)}
 function render(){
  const ch=game.chapter,s=game.state;const art=$('scene-art');if(art.dataset.image!==ch.image){art.dataset.image=ch.image;art.style.backgroundImage='url("assets/'+ch.image+'")';art.style.animation='none';void art.offsetWidth;art.style.animation=''}
@@ -24,13 +24,14 @@ function render(){
 function updatePosition(){const p=game.state.position;$('traveler').style.left=p.x+'%';$('traveler').style.top=p.y+'%'}
 function setMotion(moving,dx){const t=$('traveler');t.classList.toggle('walking',moving);if(dx>0.02){t.classList.add('dir-right');t.classList.remove('dir-left')}else if(dx<-0.02){t.classList.add('dir-left');t.classList.remove('dir-right')}}
 function paragraphs(element,text){element.replaceChildren();text.forEach(t=>{const p=document.createElement('p');p.textContent=t;element.append(p)})}
-function show(view,handlers){if(!view){$('story-dialog').close();render();save();return}cancelMove();const d=$('story-dialog');d.querySelector('.dialog-notice')?.remove();$('toast').textContent='';$('toast').classList.remove('show');$('dialog-speaker').textContent=view.speaker;$('dialog-kicker').textContent=view.puzzle?.kind==='ending'?'THE UNFINISHED NIGHT · 終章':'畫境裡的聲音';paragraphs($('dialog-text'),view.text);$('dialog-choices').replaceChildren();$('puzzle-area').replaceChildren();
+function openTrust(){cancelMove();keys.clear();window.NightTrust.open(game.state,stage=>{game.sealTrust(stage);save()})}
+function show(view,handlers){if(!view){$('story-dialog').close();render();save();return}cancelMove();if(game.state.chapter===6&&game.state.blank_trust_stage===5)view={...view,trustIds:[6]};const d=$('story-dialog');d.querySelector('.dialog-notice')?.remove();$('toast').textContent='';$('toast').classList.remove('show');$('dialog-speaker').textContent=view.speaker;$('dialog-kicker').textContent=view.puzzle?.kind==='ending'?'THE UNFINISHED NIGHT · 終章':'畫境裡的聲音';paragraphs($('dialog-text'),view.text);$('dialog-choices').replaceChildren();$('puzzle-area').replaceChildren();
  for(const choice of view.choices||[]){const button=document.createElement('button');button.textContent=choice.label;if(choice.detail){const detail=document.createElement('small');detail.textContent=choice.detail;button.append(detail)}button.onclick=()=>{try{const next=handlers?handlers[choice.id]():game.choose(choice.id);render();save();if(next!==undefined)show(next);else d.close()}catch(e){toast(e.message)}};$('dialog-choices').append(button)}
  if(view.puzzle&&view.puzzle.kind!=='ending')renderPuzzle(view.puzzle);
  if(!view.choices?.length&&!view.puzzle){const button=document.createElement('button');button.textContent='收起話語，繼續探索';button.onclick=()=>d.close();$('dialog-choices').append(button)}
  if(view.puzzle?.kind==='ending'){const mark=document.createElement('div');mark.className='ending-mark';mark.textContent='FIN';$('puzzle-area').append(mark)}
  if(view.loreId){const entry=Atlas.entries.find(e=>e.id===view.loreId),more=document.createElement('button');more.className='lore-question';more.textContent='追問：'+entry.title;more.onclick=()=>show({speaker:entry.speaker,text:entry.text,choices:[{id:'return-story',label:'回到剛才的對話'}]},{'return-story':()=>view});$('dialog-choices').append(more)}
- for(const id of view.trustIds||[]){const b=document.createElement('button');b.className='trust-invitation';b.textContent='自願開啟 · 空白信託';b.onclick=()=>{cancelMove();window.NightTrust.open(id)};$('dialog-choices').append(b)}
+ for(const id of view.trustIds||[]){const b=document.createElement('button');b.className='trust-invitation';b.textContent='自願開啟 · 空白信託';b.onclick=()=>{cancelMove();openTrust()};$('dialog-choices').append(b)}
  paginateDialogue(view);if(!d.open)d.showModal();d.scrollTop=0;const focus=$('dialog-pagination').querySelector('.next-page')||$('dialog-choices').querySelector('button')||$('puzzle-area').querySelector('button')||$('close-dialog');focus.focus({preventScroll:true});save();
 }
 function renderPuzzle(p){
@@ -145,7 +146,7 @@ const skyObserver=new ResizeObserver(alignSky);skyObserver.observe($('title-scre
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');let skyPaused=motionQuery.matches;
 function updateSky(){const stopped=skyPaused||motionQuery.matches;$('title-screen').classList.toggle('sky-paused',stopped);$('sky-motion-btn').textContent=stopped?'播放星空':'暫停星空';$('sky-motion-btn').setAttribute('aria-pressed',String(!stopped));$('sky-motion-btn').disabled=motionQuery.matches;if(motionQuery.matches)$('sky-motion-btn').textContent='星空已靜止'}
 $('sky-motion-btn').onclick=()=>{skyPaused=!skyPaused;updateSky()};motionQuery.addEventListener('change',updateSky);updateSky();
-$('trust-title').onclick=()=>{cancelMove();window.NightTrust.open()};
+$('trust-title').onclick=()=>{cancelMove();openTrust()};
 $('atlas-title').onclick=()=>show({speaker:'餘彩域 · 未乾的世界',text:Atlas.overview,choices:[]});
 $('mobile-journal').onclick=journal;$('mobile-hint').onclick=()=>$('hint-btn').click();
 $('movement-toggle').onclick=()=>{const panel=$('touch-controls');panel.hidden=!panel.hidden;$('movement-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
@@ -155,5 +156,6 @@ $('touch-interact').onclick=nearby;
 for(const btn of document.querySelectorAll('[data-dir]'))btn.onlostpointercapture=()=>{keys.clear();setMotion(false,0);save()};
 title();alignSky();requestAnimationFrame(tick);
 })();
+
 
 

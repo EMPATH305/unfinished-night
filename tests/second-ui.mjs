@@ -23,7 +23,23 @@ export async function runSecondUI(page,{importSave,report=()=>{},capture=async()
   check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal page overflow');
   if(await button('地點清單').isVisible())check(await page.evaluate(()=>[...document.querySelectorAll('#chapter-nav button')].every(b=>b.getBoundingClientRect().width>=44&&b.getBoundingClientRect().height>=44)),'Chapter navigation needs 44px touch targets');
   await capture('map-'+i);
-  await visit('witness');await close();
+  await visit('witness');
+  if(i===1){
+   await click('自願開啟 · 空白信託');const trust=page.locator('#trust-dialog');
+   for(let passage=0;passage<5;passage++){
+    check(await trust.getByRole('button',{name:'我已在現實中封存第 6 封信',exact:true}).count()===0,'No seal before final passage');
+    await trust.getByRole('button',{name:'立即顯示全文',exact:true}).click();
+    await trust.getByRole('button',{name:'讀下一段',exact:true}).click();
+   }
+   await trust.getByRole('button',{name:'立即顯示全文',exact:true}).click();
+   check(await trust.locator('input,textarea,form').count()===0,'No physical answer input');
+   check(await trust.evaluate(e=>e.scrollWidth<=e.clientWidth),'Trust fits mobile width');
+   await capture('trust-six');
+   await trust.getByRole('button',{name:'我已在現實中封存第 6 封信',exact:true}).click();
+   check(await trust.getByRole('heading',{name:'第六封之後，仍有留白',exact:true}).isVisible(),'Stops before unwritten seventh');
+   await trust.getByRole('button',{name:'暫時離開',exact:true}).click();
+  }
+  await close();
   await visit('record_a');await close();await visit('record_b');await close();
   await region(1);await visit('record_c');await close();await visit('after');await close();
   await region(0);await visit('inquiry');
@@ -51,3 +67,4 @@ export async function runSecondUI(page,{importSave,report=()=>{},capture=async()
  await click('關閉手記');
  return {passed:true};
 }
+

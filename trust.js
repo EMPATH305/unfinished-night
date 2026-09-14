@@ -1,39 +1,55 @@
-/* Public prompts only. Creator responses must never be shipped to clients. */
+/* Public prompts only. Never include creator responses or infer physical letter contents. */
 (function(root){'use strict';
-const letters=[{"id":1,"question":"如果有一天，你發現自己最深的痛苦是你人格的一部分—甚至是你最強大的那部分—那麼你還願意把它治好嗎？"},{"id":2,"question":"我真正害怕失去的是傷口，還是傷口帶來的意義？"},{"id":3,"question":"如果有一天，你不再以痛苦來定義自己，你還剩下什麼？"},{"id":4,"question":"如果有一天，你突然不再感到痛苦，你會用什麼方式辨認自己依然是「你」？"},{"id":5,"question":"如果痛苦讓你覺得「真實」—那麼沒有痛苦，還能相信自己的情感嗎？"}];
-let stage=0;
-function at(state,node,revisited){if(!revisited)return [];const c=state.chapter,f=state.flags||{},chosen=state.choices||{};
- if(c===0&&node==='keeper'&&chosen.c1)return [1];
- if(c===5&&node==='witness'&&chosen.c6)return [2];
- if(c===3&&node==='door'&&chosen.c4&&(state.contentVersion===1||f.c4_after))return [3];
- if(c===6&&node==='witness'&&chosen.c7)return [4];
- if((c===4&&node==='ink'&&f.c5_promise)||(c===7&&node==='witness'&&chosen.c8))return [5];
+const letters=[{"id": 1, "question": "如果有一天，你發現自己最深的痛苦是你人格的一部分—甚至是你最強大的那部分—那麼你還願意把它治好嗎？"}, {"id": 2, "question": "我真正害怕失去的是傷口，還是傷口帶來的意義？"}, {"id": 3, "question": "如果有一天，你不再以痛苦來定義自己，你還剩下什麼？"}, {"id": 4, "question": "如果有一天，你突然不再感到痛苦，你會用什麼方式辨認自己依然是「你」？"}, {"id": 5, "question": "如果痛苦讓你覺得「真實」—那麼沒有痛苦，還能相信自己的情感嗎？"}, {"id": 6, "question": "如果有一天，你發現你一直以來深信不疑的那些『真實情緒』—痛苦、狂喜、感動、平靜—其實都可能是你為了『讓自己相信自己存在』而創造出來的，那你會怎麼驗證『你沒有在欺騙自己』？"}];
+const sixth=[
+'墨：「安妲記得北門關著；達澄記得六只糧袋被運走。兩份紀錄都寫著鐘的尾音。那還不足以告訴我們，他們看的是不是同一扇門。」',
+'墨：「芙岑卸下舊鐘梁時，空場也留下了震動。確信可能使鐘共鳴；誤認的記憶也可能。鐘沒有替我們走到窗前。」',
+'墨：「你告訴這裡，前五封信已經封好。我沒有讀過。它們沒有把你變成一個我能解釋的人。」',
+'墨：「感動被感受到，不等於你已知道它從哪裡來。窗上的光是真的；我們替窗外取的名字，仍可能需要更正。」',
+'墨：「我也只有一些片段。若要檢查一個故事，也許得容許別人的腳印走進來——包括那些不替它作證的。」'
+];
+function available(state){return (state.blank_trust_stage||0)<5||((state.blank_trust_stage||0)===5&&state.chapter>=6)}
+function at(state,node,revisited){const stage=state.blank_trust_stage||0,c=state.chapter;
+ if(stage===5&&c===6&&['witness','inquiry'].includes(node))return [6];
+ if(!revisited)return [];
+ if(stage===0&&((c===0&&['lamp','keeper'].includes(node))||(c===6&&node==='after')))return [1];
+ if(stage===1&&((c===1&&node==='post')||(c===5&&node==='witness')))return [2];
+ if(stage===2&&c===3&&node==='door'&&state.choices?.c4)return [3];
+ if(stage===3&&c===6&&['witness','inquiry'].includes(node))return [4];
+ if(stage===4&&((c===4&&['frame','ink'].includes(node))||(c===7&&node==='witness')))return [5];
  return [];
 }
-
-function open(){
- const doc=root.document,d=doc.getElementById('trust-dialog');let timer;
+function open(state,seal){
+ const doc=root.document,d=doc.getElementById('trust-dialog');let timer,page=0;
  const make=(tag,text)=>{const e=doc.createElement(tag);if(text)e.textContent=text;return e};
  const btn=(text,run)=>{const b=make('button',text);b.type='button';b.className='secondary';b.onclick=run;return b};
  const stop=()=>{if(timer)clearInterval(timer);timer=null};
- const close=()=>{stop();d.close()};
  function paint(){
- stop();d.replaceChildren();d.classList.remove('trust-corridor');
- const top=make('div');top.className='dialog-top';top.append(make('span','空白信託'),btn('暫時離開',close));
- const h=make('h2',stage<5?'第'+(stage+1)+'封':'五道提問暫告一段落');h.id='trust-heading';d.append(top,h);
- if(stage>=5){d.append(make('p','下一道提問尚未開放。信留在你手裡；這裡不知道內容。'));return}
- d.append(make('p','若願意，準備 A6 白紙（105 × 148 mm）、筆與實體信封。你也可以改日再來。'));
- const p=make('blockquote');p.className='trust-question';p.id='trust-question';p.setAttribute('aria-label',letters[stage].question);
- const text=letters[stage].question;let cursor=0;
- const reveal=()=>{stop();p.textContent=text};
+ stop();d.replaceChildren();const stage=state.blank_trust_stage||0;
+ d.classList.toggle('trust-snow',stage===5&&available(state));
+ const top=make('div');top.className='dialog-top';top.append(make('span','空白信託'),btn('暫時離開',()=>d.close()));
+ const h=make('h2',available(state)?'第'+(stage+1)+'封':stage===5?'五道提問暫告一段落':'第六封之後，仍有留白');h.id='trust-heading';d.append(top,h);
+ if(!available(state)){d.append(make('p',stage===5?'下一封在第七章雪鈴城等待。你也可以繼續主線，不必寫信。':'第七至十題尚未開放。信仍留在你手裡。'));return}
+ const pages=stage===5?[...sixth,letters[stage].question]:[letters[stage].question];
+ const final=page===pages.length-1;
+ d.append(make('p',final?'若願意，準備 A6 白紙（105 × 148 mm）、筆與實體信封。在現實書寫後封存；不必交給任何人。':'雙窗聽證所 · '+(page+1)+' / '+pages.length));
+ if(final){const envelope=make('div');envelope.className='trust-envelope';envelope.setAttribute('aria-hidden','true');d.append(envelope)}
+ const p=make(final?'blockquote':'p');p.className='trust-question';p.id=final?'trust-question':'trust-passage';p.setAttribute('aria-label',pages[page]);
+ const visual=make('span');visual.setAttribute('aria-hidden','true');p.append(visual);
  const actions=make('div');actions.className='trust-actions';
- actions.append(btn('立即顯示全文',reveal),btn('我已封信',()=>{stop();stage++;paint()}));
- d.append(p,actions,make('p','只接受你的封信聲明，不驗證、讀取或儲存信件。此階段只保留於本次頁面，重新整理會重置；不寫入旅程 JSON。'));
+ let done=false;const proceed=btn(final?'我已在現實中封存第 '+(stage+1)+' 封信':'讀下一段',()=>{
+ if(!done)return;proceed.disabled=true;stop();
+ if(final){seal(stage);page=0}else page++;
+ paint();d.querySelector('h2').setAttribute('tabindex','-1');d.querySelector('h2').focus({preventScroll:true});
+ });proceed.hidden=true;
+ const reveal=()=>{stop();visual.textContent=pages[page];done=true;proceed.hidden=false};
+ actions.append(btn('立即顯示全文',reveal),proceed);
+ d.append(p,actions,make('p','網頁只記錄封信階段，不讀取、驗證或儲存信件內容，也不根據封信推測你的答案。可以隨時離開；主線不受影響。'));
  if(root.matchMedia('(prefers-reduced-motion: reduce)').matches)reveal();
- else timer=setInterval(()=>{cursor++;p.textContent=text.slice(0,cursor);if(cursor>=text.length)stop()},95);
+ else {let cursor=0;timer=setInterval(()=>{visual.textContent=pages[page].slice(0,++cursor);if(cursor>=pages[page].length)reveal()},60)}
  d.scrollTop=0;
  }
  paint();if(!d.open)d.showModal();d.querySelector('button').focus({preventScroll:true});d.addEventListener('close',stop,{once:true});
 }
-root.NightTrust={letters,at,open};if(typeof module!=='undefined')module.exports=root.NightTrust;
+root.NightTrust={letters,at,available,open};if(typeof module!=='undefined')module.exports=root.NightTrust;
 })(typeof globalThis!=='undefined'?globalThis:this);
