@@ -30,6 +30,7 @@ function show(view,handlers){if(!view){$('story-dialog').close();render();save()
  if(!view.choices?.length&&!view.puzzle){const button=document.createElement('button');button.textContent='收起話語，繼續探索';button.onclick=()=>d.close();$('dialog-choices').append(button)}
  if(view.puzzle?.kind==='ending'){const mark=document.createElement('div');mark.className='ending-mark';mark.textContent='FIN';$('puzzle-area').append(mark)}
  if(view.loreId){const entry=Atlas.entries.find(e=>e.id===view.loreId),more=document.createElement('button');more.className='lore-question';more.textContent='追問：'+entry.title;more.onclick=()=>show({speaker:entry.speaker,text:entry.text,choices:[{id:'return-story',label:'回到剛才的對話'}]},{'return-story':()=>view});$('dialog-choices').append(more)}
+ for(const id of view.trustIds||[]){const b=document.createElement('button');b.className='trust-invitation';b.textContent='自願開啟 · 空白信託第'+id+'封';b.onclick=()=>{cancelMove();window.NightTrust.open(id)};$('dialog-choices').append(b)}
  paginateDialogue(view);if(!d.open)d.showModal();d.scrollTop=0;const focus=$('dialog-pagination').querySelector('.next-page')||$('dialog-choices').querySelector('button')||$('puzzle-area').querySelector('button')||$('close-dialog');focus.focus({preventScroll:true});save();
 }
 function renderPuzzle(p){
@@ -101,9 +102,9 @@ function paginateDialogue(view){
   }
  };paint();
 }
-function inspect(id){try{const view=game.interact(id),entry=Atlas.at(game.state,id);if(entry)view.loreId=entry.id;render();show(view);save()}catch(e){toast(e.message)}}
-function moveTo(x,y,node){if(!active||$('story-dialog').open||$('journal-dialog').open)return Promise.resolve(false);cancelMove();target={x:Math.max(5,Math.min(95,x)),y:Math.max(23,Math.min(91,y)),node};if(reduced){game.state.position={x:target.x,y:target.y};updatePosition();target=null;if(node)inspect(node);save();return Promise.resolve(true)}return new Promise(resolve=>{arrival=resolve})}
-function tick(now){const dt=Math.min((now-lastTime)/1000||0,.06);lastTime=now;if(active&&!$('story-dialog').open&&!$('journal-dialog').open){const p=game.state.position;let dx=0,dy=0;if(keys.has('ArrowLeft')||keys.has('a'))dx--;if(keys.has('ArrowRight')||keys.has('d'))dx++;if(keys.has('ArrowUp')||keys.has('w'))dy--;if(keys.has('ArrowDown')||keys.has('s'))dy++;
+function inspect(id){try{const revisited=game.has('c'+(game.state.chapter+1)+'_visited_'+id);const view=game.interact(id),entry=Atlas.at(game.state,id);view.trustIds=window.NightTrust.at(game.state,id,revisited);if(entry)view.loreId=entry.id;render();show(view);save()}catch(e){toast(e.message)}}
+function moveTo(x,y,node){if(!active||$('story-dialog').open||$('journal-dialog').open||$('trust-dialog').open)return Promise.resolve(false);cancelMove();target={x:Math.max(5,Math.min(95,x)),y:Math.max(23,Math.min(91,y)),node};if(reduced){game.state.position={x:target.x,y:target.y};updatePosition();target=null;if(node)inspect(node);save();return Promise.resolve(true)}return new Promise(resolve=>{arrival=resolve})}
+function tick(now){const dt=Math.min((now-lastTime)/1000||0,.06);lastTime=now;if(active&&!$('story-dialog').open&&!$('journal-dialog').open&&!$('trust-dialog').open){const p=game.state.position;let dx=0,dy=0;if(keys.has('ArrowLeft')||keys.has('a'))dx--;if(keys.has('ArrowRight')||keys.has('d'))dx++;if(keys.has('ArrowUp')||keys.has('w'))dy--;if(keys.has('ArrowDown')||keys.has('s'))dy++;
  if(dx||dy){if(target){target=null;if(arrival){arrival(false);arrival=null}}const n=Math.hypot(dx,dy);p.x=Math.max(5,Math.min(95,p.x+dx/n*dt*23));p.y=Math.max(23,Math.min(91,p.y+dy/n*dt*30));updatePosition();setMotion(true,dx)}
  else if(target){const tdx=target.x-p.x,tdy=target.y-p.y,dist=Math.hypot(tdx,tdy),step=dt*42;if(dist<=step){p.x=target.x;p.y=target.y;const node=target.node;target=null;updatePosition();setMotion(false,0);const done=arrival;arrival=null;if(node)inspect(node);save();if(done)done(true)}else{p.x+=tdx/dist*step;p.y+=tdy/dist*step;updatePosition();setMotion(true,tdx)}}
  else setMotion(false,0);
@@ -123,7 +124,7 @@ $('close-dialog').onclick=()=>$('story-dialog').close();$('close-journal').oncli
 $('about-btn').onclick=()=>show({speaker:'關於這個尚未乾透的世界',text:['《未乾之夜》是一款以梵谷繪畫為靈感的原創奇幻探索遊戲。第一部走進星夜、麥田、向日葵、藍色房間與空白海；第二部續往赤赭鹽市、雪鈴城與玻璃潮汐。','畫境規則、角色與事件均為原創虛構，不代表梵谷的生平或畫作的唯一解讀。場景與烏鴉為 AI 生成的原創繪畫素材，並非原作數位複製品。','創作發起：林萱渝。故事與遊戲製作：與 AI 協作。每章包含兩個探索區域、決定前的準備與決定後的回訪，故事仍會持續擴充。','適合慢慢探索與閱讀。沒有戰鬥，也沒有時間限制。遊玩本身不需要 AI 帳號或 API。'],choices:[]});
 $('export-btn').onclick=download;for(const id of ['import-btn','import-title'])$(id).onclick=()=>$('import-file').click();$('import-file').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;try{if(file.size>100000)throw Error('存檔檔案太大。請選擇遊戲匯出的 JSON 存檔。');const candidate=new Game(JSON.parse(await file.text()));$('journal-dialog').close();show({speaker:'載入這段旅程？',text:['即將載入「'+candidate.chapter.title+'」的旅程，取代目前瀏覽器內的自動存檔。'],choices:[{id:'load',label:'載入這份存檔'},{id:'cancel',label:'保留目前旅程'}]},{load:()=>{game=candidate;save();enter();toast('旅程已載入。');return game.state.finished?game.ending():null},cancel:()=>null})}catch(err){toast(err.message||'無法讀取這份存檔。')}};
 $('world').addEventListener('click',e=>{if(e.target.closest('button')||e.target.closest('.color-palette'))return;const r=$('world').getBoundingClientRect();moveTo((e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100)});
-window.addEventListener('keydown',e=>{if(!active||$('story-dialog').open||$('journal-dialog').open||e.target.closest('button,input'))return;const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(key)){e.preventDefault();keys.add(key)}if(key==='e'){e.preventDefault();nearby()}});window.addEventListener('keyup',e=>{keys.delete(e.key.length===1?e.key.toLowerCase():e.key);if(active)save()});window.addEventListener('blur',()=>keys.clear());document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();save()}});window.addEventListener('beforeunload',save);
+window.addEventListener('keydown',e=>{if(!active||$('story-dialog').open||$('journal-dialog').open||$('trust-dialog').open||e.target.closest('button,input'))return;const key=e.key.length===1?e.key.toLowerCase():e.key;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(key)){e.preventDefault();keys.add(key)}if(key==='e'){e.preventDefault();nearby()}});window.addEventListener('keyup',e=>{keys.delete(e.key.length===1?e.key.toLowerCase():e.key);if(active)save()});window.addEventListener('blur',()=>keys.clear());document.addEventListener('visibilitychange',()=>{if(document.hidden){keys.clear();save()}});window.addEventListener('beforeunload',save);
 for(const btn of document.querySelectorAll('[data-dir]')){const key={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight'}[btn.dataset.dir];btn.onpointerdown=e=>{e.preventDefault();keys.add(key);btn.setPointerCapture(e.pointerId)};btn.onpointerup=btn.onpointercancel=()=>{keys.delete(key);save()}}
 for(let i=0;i<14;i++){const dot=document.createElement('i');dot.className='mote';dot.style.left=(7+i*6.5)%100+'%';dot.style.top=(30+i*13)%93+'%';dot.style.animationDelay=(-i*.9)+'s';$('motes').append(dot)}
 // Optional structured access uses the same visible journey state. No AI runtime dependency.
@@ -144,6 +145,7 @@ const skyObserver=new ResizeObserver(alignSky);skyObserver.observe($('title-scre
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');let skyPaused=motionQuery.matches;
 function updateSky(){const stopped=skyPaused||motionQuery.matches;$('title-screen').classList.toggle('sky-paused',stopped);$('sky-motion-btn').textContent=stopped?'播放星空':'暫停星空';$('sky-motion-btn').setAttribute('aria-pressed',String(!stopped));$('sky-motion-btn').disabled=motionQuery.matches;if(motionQuery.matches)$('sky-motion-btn').textContent='星空已靜止'}
 $('sky-motion-btn').onclick=()=>{skyPaused=!skyPaused;updateSky()};motionQuery.addEventListener('change',updateSky);updateSky();
+$('trust-title').onclick=()=>{cancelMove();window.NightTrust.open()};
 $('atlas-title').onclick=()=>show({speaker:'餘彩域 · 未乾的世界',text:Atlas.overview,choices:[]});
 $('mobile-journal').onclick=journal;$('mobile-hint').onclick=()=>$('hint-btn').click();
 $('movement-toggle').onclick=()=>{const panel=$('touch-controls');panel.hidden=!panel.hidden;$('movement-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
@@ -151,6 +153,7 @@ $('places-btn').onclick=()=>{const nodes=game.mapNodes,handlers={};nodes.forEach
 function nearby(){const p=game.state.position,near=game.mapNodes.map(n=>({n,d:Math.hypot(n[2]-p.x,n[3]+5-p.y)})).sort((a,b)=>a.d-b.d)[0];if(near&&near.d<18)inspect(near.n[0]);else toast('再靠近一個地標，或從地點清單選擇它。')}
 $('touch-interact').onclick=nearby;
 for(const btn of document.querySelectorAll('[data-dir]'))btn.onlostpointercapture=()=>{keys.clear();setMotion(false,0);save()};
-title();requestAnimationFrame(tick);
+title();alignSky();requestAnimationFrame(tick);
 })();
+
 

@@ -13,6 +13,7 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  const query=fn=>page.evaluate(fn);
  const sky=()=>query(()=>{const el=document.querySelector('.sky-vortex-main'),css=getComputedStyle(el);return {transform:css.transform,name:css.animationName,play:css.animationPlayState}});
  check(!await page.locator('#story-dialog').isVisible()&&!await page.locator('#journal-dialog').isVisible(),'Closed dialogs must be hidden, including on mobile');
+ await page.locator('.sky-vortex[style*="background-size"]').first().waitFor({state:'attached'});
  const skyBounds=await query(()=>[...document.querySelectorAll('.sky-vortex')].map(el=>({width:parseFloat(el.style.width),height:parseFloat(el.style.height),background:el.style.backgroundSize})));
  check(skyBounds.length===9&&skyBounds.every(b=>b.width>0&&b.width===b.height&&b.background),'Sky patches must align to image-cover coordinates');
  const first=await sky();

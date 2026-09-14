@@ -105,3 +105,22 @@ dialog:not([open]){display:none}
 }
 
 @media(max-width:460px){#chapter-nav{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}#chapter-nav button{min-width:44px;min-height:44px}}
+
+
+/* Optional physical letters; no input fields or completion state. */
+#trust-dialog{width:min(700px,calc(100% - 24px));max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain}
+#trust-dialog .dialog-top{position:sticky;top:-20px;background:#142239;z-index:3;gap:16px}
+#trust-dialog .dialog-top button{min-height:44px;flex-shrink:0}
+#trust-dialog .trust-actions{display:flex;flex-direction:column;gap:12px;margin:20px 0}
+#trust-dialog button,#trust-dialog summary{min-height:48px;cursor:pointer}
+#trust-dialog summary{padding:12px 0;color:var(--gold)}
+#trust-dialog p{overflow-wrap:anywhere}
+.trust-preparation{border-left:1px solid var(--gold);padding-left:16px;color:var(--muted)}
+.trust-question{font-family:var(--serif);font-size:clamp(20px,3vw,27px);line-height:1.9;background:#f1eddf;color:#243343;border:1px solid #d4ccba;margin:24px 0;padding:28px 24px;white-space:normal;overflow-wrap:anywhere}
+.trust-question.ink-arriving{animation:trust-ink 6s ease-out both}
+.trust-original{border-block:1px solid var(--line);margin:24px 0;padding:8px 0}
+.trust-letter-text{font-size:17px;line-height:2;white-space:pre-wrap}
+#trust-dialog.trust-corridor{background:linear-gradient(145deg,#263342,#142239 58%);border-color:#d7d1bd}
+@keyframes trust-ink{from{color:transparent;text-shadow:0 0 12px #24334315}to{color:#243343;text-shadow:0 0 0 transparent}}
+@media(max-width:460px){#trust-dialog{padding:16px 18px}#trust-dialog .dialog-top{top:-16px;flex-wrap:wrap}#trust-dialog h2{font-size:25px}.trust-question{padding:22px 18px}.trust-scene p{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.trust-question.ink-arriving{animation:none}}

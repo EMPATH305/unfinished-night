@@ -2,7 +2,7 @@
   "name": "unfinished-night",
   "private": true,
   "scripts": {
-    "test": "node tests/progression.cjs && node tests/save-migrations.cjs && node tests/narrative-regression.cjs && node tests/atlas.cjs && node tests/second-part.cjs",
+    "test": "node tests/progression.cjs && node tests/save-migrations.cjs && node tests/narrative-regression.cjs && node tests/atlas.cjs && node tests/second-part.cjs && node tests/trust.cjs",
     "test:ui": "node tests/run-ui.mjs"
   },
   "devDependencies": {
