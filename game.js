@@ -30,7 +30,7 @@ function show(view,handlers){if(!view){$('story-dialog').close();render();save()
  if(!view.choices?.length&&!view.puzzle){const button=document.createElement('button');button.textContent='收起話語，繼續探索';button.onclick=()=>d.close();$('dialog-choices').append(button)}
  if(view.puzzle?.kind==='ending'){const mark=document.createElement('div');mark.className='ending-mark';mark.textContent='FIN';$('puzzle-area').append(mark)}
  if(view.loreId){const entry=Atlas.entries.find(e=>e.id===view.loreId),more=document.createElement('button');more.className='lore-question';more.textContent='追問：'+entry.title;more.onclick=()=>show({speaker:entry.speaker,text:entry.text,choices:[{id:'return-story',label:'回到剛才的對話'}]},{'return-story':()=>view});$('dialog-choices').append(more)}
- for(const id of view.trustIds||[]){const b=document.createElement('button');b.className='trust-invitation';b.textContent='自願開啟 · 空白信託第'+id+'封';b.onclick=()=>{cancelMove();window.NightTrust.open(id)};$('dialog-choices').append(b)}
+ for(const id of view.trustIds||[]){const b=document.createElement('button');b.className='trust-invitation';b.textContent='自願開啟 · 空白信託';b.onclick=()=>{cancelMove();window.NightTrust.open(id)};$('dialog-choices').append(b)}
  paginateDialogue(view);if(!d.open)d.showModal();d.scrollTop=0;const focus=$('dialog-pagination').querySelector('.next-page')||$('dialog-choices').querySelector('button')||$('puzzle-area').querySelector('button')||$('close-dialog');focus.focus({preventScroll:true});save();
 }
 function renderPuzzle(p){
