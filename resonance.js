@@ -1,5 +1,6 @@
 /* Public scene responses. Seal counts are not knowledge of a person's letters. */
 (function(root){'use strict';
+const Lore=root.NightLoreTrust||(typeof require==='function'?require('./lore-trust.js'):null);
 const notes=[
  {id:'c1_lamp_margin_seen',chapter:0,node:'lamp',stage:1,title:'製燈人的燈 · 回訪註記',text:['燈罩的裂口被補過，舊接縫仍在。','墨：「修燈人沒有把接縫磨掉。他說，再壞一次時，得知道從哪裡拆。」','「留著接縫，不表示他希望燈再裂一次。」']},
  {id:'c2_post_margin_seen',chapter:1,node:'post',stage:2,title:'回信站 · 回訪註記',text:['椅背上留著上一位等信者磨出的凹痕。新來的人坐下，沒有被要求照他的姿勢等待。','墨：「留下等過的痕跡，不等於把下一封信也押在這裡。」']},
@@ -7,9 +8,9 @@ const notes=[
  {id:'c4_door_margin_seen',chapter:3,node:'door',stage:3,title:'離室走廊 · 回訪註記',text:['牆上的稱謂褪掉了。門軸仍按原來的方向轉動。','墨：「少了一個名字，還不能斷言裡面空了。」']},
  {id:'c4_mirror_margin_seen',chapter:3,node:'mirror',stage:4,title:'鏡前 · 回訪註記',text:['鏡子慢了一瞬。你抬起手時，玻璃裡的手還停在原處。','墨：「它記得上一刻。這一刻，還得重新看。」']},
  {id:'c5_frame_margin_seen',chapter:4,node:'frame',stage:5,title:'最初的畫架 · 回訪註記',text:['海面映出一小片平靜，沒有附上返航日期。','墨：「平靜可以在此刻發生。船是否會回來，仍須另查。」']},
- {id:'c6_record_a_margin_seen',chapter:5,node:'record_a',stage:2,title:'兩面的代名牌 · 查證註記',text:['牌背留著磨痕。它能證明曾被佩戴，不能證明那個名字仍被願意地使用。','墨：「曾經答應，不能替每一個後來的日子簽名。」']},
- {id:'c7_record_a_margin_seen',chapter:6,node:'record_a',stage:4,title:'雙窗聽證所 · 查證註記',text:['他認得那晚的自己。圖紙沒有因此少掉另一扇窗。','墨：「認得自己站在哪裡，還不足以知道別人看見了什麼。」']},
- {id:'c7_record_c_margin_seen',chapter:6,node:'record_c',stage:1,title:'暫疑廊 · 更正註記',text:['更正件沒有覆蓋原來的字。兩種墨色隔著一道細線。','墨：「撤回一句話，不必把說過它的人一併刮掉。」','「但留下那個人，也不能讓錯字繼續替別人作證。」']},
+ {id:'c6_record_a_margin_seen',chapter:5,node:'record_a',stage:2,title:'兩面的代名牌 · 查證註記',text:[Lore.entries.find(e=>e.id==='salt_nameplate').note]},
+ {id:'c7_record_a_margin_seen',chapter:6,node:'record_a',stage:4,title:'雙窗聽證所 · 查證註記',text:[Lore.entries.find(e=>e.id==='snow_windows').note]},
+ {id:'c7_record_c_margin_seen',chapter:6,node:'record_c',stage:1,title:'暫疑廊 · 更正註記',text:[Lore.entries.find(e=>e.id==='snow_correction').note]},
  {id:'c8_record_c_margin_seen',chapter:7,node:'record_c',stage:5,title:'沒有歸期的信 · 查證註記',text:['艾汀收回信，指尖仍壓著折線。','墨：「想念有它的位置。歸期若沒有寫，我們就不能替它填上。」']}
 ];
 const bellOrdinary=['墨：「把鐘聲記在鐘聲那一欄。門開沒開，還要去找門的證據。」'];
@@ -23,6 +24,12 @@ function decorate(state,node,revisited,view){
  result.marginStart=result.text.length;
  for(const n of selected)result.text.push(...n.text);
  result.marginIds=selected.map(n=>n.id);
+ const lore=Lore.at(state,node);
+ if(lore?.annotation&&permitted(state,node)&&(node!=='inquiry'||['a','b','c'].every(s=>state.flags['c8_evidence_'+s]))){
+  const existing=result.text.indexOf(lore.annotation);
+  if(existing<0){result.text.push(lore.annotation);result.inkIndices=[result.text.length-1];}
+  else result.inkIndices=[existing];
+ }
  if(state.chapter===6&&node==='record_b'&&permitted(state,node)){
   result.text.push(...((state.blank_trust_stage||0)>=6?bellAfterSix:bellOrdinary));
   result.bellEvidence=true;

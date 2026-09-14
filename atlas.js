@@ -54,6 +54,6 @@ const entries=[
 ];
 function available(state){return entries.filter(e=>e.chapter<=state.chapter&&state.flags['c'+(e.chapter+1)+'_visited_'+e.node]);}
 function at(state,node){return available(state).find(e=>e.chapter===state.chapter&&e.node===node);}
-const overview=['有人把這些尚未乾透、沿裂痕相連的地方稱作「餘彩域」。五幅畫境只是你目前能走到的部分。','在這裡，顏色能被借走，記憶能寄存在物件與羽毛裡。但借色有來源，記憶有空白，修復也需要住在其中的人同意。','探索地標後，對話裡可能出現額外的追問；旅人手記中的「畫境志」會保存已發現的故事。遠方的傳聞尚不是已開放的新章節。'];
+const overview=['有人把這些尚未乾透、沿裂痕相連的地方稱作「餘彩域」。畫境沿著未完成的筆觸相連，旅程可以繼續走向遠方。','在這裡，顏色能被借走，記憶能寄存在物件與羽毛裡。但借色有來源，記憶有空白，修復也需要住在其中的人同意。','探索地標後，對話裡可能出現額外的追問；旅人手記中的「畫境志」會保存已發現的故事。第二部的赤赭鹽市、雪鈴城與玻璃潮汐已有可查閱的地標紀錄。'];
 root.NightAtlas={entries,available,at,overview};if(typeof module!=='undefined')module.exports=root.NightAtlas;
 })(typeof globalThis!=='undefined'?globalThis:this);

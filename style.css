@@ -153,3 +153,9 @@ dialog:not([open]){display:none}
 .resonance-proof{margin:18px 0;border-block:1px solid #8e9fa966;padding:14px 0}
 .resonance-proof summary{cursor:pointer;min-height:44px;padding:12px 0;line-height:1.7}
 @keyframes resonance-arrive{from{opacity:0;filter:blur(3px)}to{opacity:1;filter:blur(0)}}
+
+.lore-trust-ink{display:grid!important;position:relative;border-left:1px solid #a9b5bc;padding-left:16px;overflow-wrap:anywhere;color:#d1d8dd!important}
+.lore-trust-reserve,.lore-trust-visible{grid-area:1/1}
+.lore-trust-reserve{visibility:hidden}
+.lore-trust-accessible{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.lore-trust-reveal{min-height:44px;max-width:100%;white-space:normal;margin:8px 0}

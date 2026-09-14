@@ -5,6 +5,7 @@ import { resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runUIRegression } from './ui-regression.mjs';
 import { runSecondUI } from './second-ui.mjs';
+import { runLoreTrustUI } from './lore-trust-ui.mjs';
 import { runTrustUI } from './trust-ui.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.jpg':'image/jpeg'};
@@ -34,10 +35,12 @@ try{
  for(const mode of [{name:'second-desktop',viewport:{width:1366,height:900}},{name:'second-mobile',viewport:{width:390,height:844},isMobile:true,hasTouch:true},{name:'second-compact',viewport:{width:320,height:740},isMobile:true,hasTouch:true},{name:'second-landscape',viewport:{width:844,height:390},isMobile:true,hasTouch:true}]){
   const {name,...opts}=mode;await secondContext(browser,name,opts);
  }
+ for(const opts of [{viewport:{width:1366,height:900}},{viewport:{width:320,height:740},isMobile:true,hasTouch:true},{viewport:{width:844,height:390},isMobile:true,hasTouch:true},{viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}])await loreContext(browser,opts);
  await browser.close();browser=await webkit.launch();
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  try{await page.goto('http://127.0.0.1:'+server.address().port);await runTrustUI(page,{report:line=>console.log('trust: '+line)});await runUIRegression(page,{report:line=>console.log('webkit-mobile: '+line)});if(errors.length)throw Error(errors.join('\n'));}
  finally{await page.screenshot({path:'ui-webkit-mobile.png',fullPage:true});await context.close()}
+ await loreContext(browser,{viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  await secondContext(browser,'second-webkit',{viewport:{width:390,height:844},isMobile:true,hasTouch:true});
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 
@@ -58,3 +61,5 @@ async function secondContext(browser,name,options){
  }finally{await page.screenshot({path:'ui-'+name+'-last.png',fullPage:true});await context.close();}
 }
 
+
+async function loreContext(browser,opts){const context=await browser.newContext(opts),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));try{await page.goto('http://127.0.0.1:'+server.address().port);await runLoreTrustUI(page,{report:console.log});if(errors.length)throw Error(errors.join('\n'));}finally{await page.screenshot({path:'ui-lore-'+browser.browserType().name()+'-'+opts.viewport.width+'.png',fullPage:true});await context.close();}}
