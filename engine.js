@@ -4,6 +4,7 @@ const Journey=root.NightJourney||(typeof require==='function'?require('./journey
 Journey.install(Story);
 const Second=root.NightSecond||(typeof require==='function'?require('./second.js'):null);
 Second.install(Story);
+const Resonance=root.NightResonance||(typeof require==='function'?require('./resonance.js'):null);
 const SAVE_VERSION=2;
 // Schema migrations are separate from story progression. Never mutate an import.
 const migrations={1:raw=>({...raw,version:2,contentVersion:raw.contentVersion??1,region:raw.region??0})};
@@ -63,6 +64,11 @@ class Game{
  decide(key,value,text){this.state.choices[key]=value;this.flag(key+'_done');return this.show('選擇留下的痕跡',text,[say('back','回到畫境，看看改變',()=>null)])}
  advance(){if(!this.state.choices['c'+(this.state.chapter+1)]||(this.state.chapter===4||this.state.chapter>=7))throw Error('這一章的故事還沒有結束。');if(!(this.state.chapter>=5?Second.ready(this):Journey.readyToLeave(this)))throw Error(this.goal.text);this.state.chapter++;this.state.contentVersion=this.state.chapter>=5?3:2;this.state.region=0;this.state.pigments=[];this.state.position={x:50,y:84};return this.intro()}
  interact(id){
+  const revisited=this.has('c'+(this.state.chapter+1)+'_visited_'+id);
+  const view=this.interactBase(id);
+  this.view=Resonance.decorate(this.state,id,revisited,view);return this.view;
+ }
+ interactBase(id){
   if(!this.mapNodes.some(n=>n[0]===id))throw Error('這裡沒有那個地標。');
   this.flag('c'+(this.state.chapter+1)+'_visited_'+id);
   if(this.state.chapter>=5)return Second.event(this,id);
@@ -212,5 +218,6 @@ class Game{
 }
 root.NightGame=Game;if(typeof module!=='undefined')module.exports=Game;
 })(typeof globalThis!=='undefined'?globalThis:this);
+
 
 

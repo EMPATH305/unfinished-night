@@ -11,16 +11,16 @@ const sixth=[
 function available(state){return (state.blank_trust_stage||0)<5||((state.blank_trust_stage||0)===5&&state.chapter>=6)}
 function at(state,node,revisited){const stage=state.blank_trust_stage||0,c=state.chapter;
  if(stage===5&&c===6&&['witness','inquiry'].includes(node))return [6];
- if(!revisited)return [];
- if(stage===0&&((c===0&&['lamp','keeper'].includes(node))||(c===6&&node==='after')))return [1];
- if(stage===1&&((c===1&&node==='post')||(c===5&&node==='witness')))return [2];
+ if(stage===0&&((c===0&&node==='lamp')||(c===6&&node==='record_c')))return [1];
+ if(stage===1&&((c===1&&node==='post')||(c===5&&node==='record_a')))return [2];
  if(stage===2&&c===3&&node==='door'&&state.choices?.c4)return [3];
- if(stage===3&&c===6&&['witness','inquiry'].includes(node))return [4];
- if(stage===4&&((c===4&&['frame','ink'].includes(node))||(c===7&&node==='witness')))return [5];
+ if(stage===3&&((c===3&&node==='mirror')||(c===6&&['witness','record_a'].includes(node))))return [4];
+ if(stage===4&&c===4&&['frame','ending'].includes(node))return [5];
+ if(stage===4&&c===7&&node==='record_c')return [5];
  return [];
 }
-function open(state,seal){
- const doc=root.document,d=doc.getElementById('trust-dialog');let timer,page=0;
+function open(state,seal,options={}){
+ const doc=root.document,d=doc.getElementById('trust-dialog');let timer,page=0,sealed=false;
  const make=(tag,text)=>{const e=doc.createElement(tag);if(text)e.textContent=text;return e};
  const btn=(text,run)=>{const b=make('button',text);b.type='button';b.className='secondary';b.onclick=run;return b};
  const stop=()=>{if(timer)clearInterval(timer);timer=null};
@@ -29,6 +29,7 @@ function open(state,seal){
  d.classList.toggle('trust-snow',stage===5&&available(state));
  const top=make('div');top.className='dialog-top';top.append(make('span','空白信託'),btn('暫時離開',()=>d.close()));
  const h=make('h2',available(state)?'第'+(stage+1)+'封':stage===5?'五道提問暫告一段落':'第六封之後，仍有留白');h.id='trust-heading';d.append(top,h);
+ if(options.overview||sealed){h.textContent=sealed?'信留在你手裡':'空白信託 · 地標中的信封';d.append(make('p',sealed?'這裡只收下封信的聲明。'+(['','下一封在麥原的回信站。','下一封在候歸之室離開前的門邊。','離開房間以前，可以回到鏡前遇見第四封。','第五封在空白海的最初畫架。','第六封在雪鈴城的雙窗聽證所。','第七至十題仍未開放。'][stage]||''):'問題會在地標與過場中出現：第一封在迴星鎮的燈，第二封在麥原回信站，第三封在候歸之室離開前，第四封在離室前回看鏡子，第五封在空白海畫架。'),make('p','已聲明封存 '+stage+' 封。沒有答案輸入或上傳入口；參與與否不影響主線。'));return}
  if(!available(state)){d.append(make('p',stage===5?'下一封在第七章雪鈴城等待。你也可以繼續主線，不必寫信。':'第七至十題尚未開放。信仍留在你手裡。'));return}
  const pages=stage===5?[...sixth,letters[stage].question]:[letters[stage].question];
  const final=page===pages.length-1;
@@ -40,7 +41,7 @@ function open(state,seal){
  const actions=make('div');actions.className='trust-actions';
  let done=false;const proceed=btn(final?'我已在現實中封存第 '+(stage+1)+' 封信':'讀下一段',()=>{
  if(!done)return;proceed.disabled=true;stop();
- if(final){seal(stage);page=0}else page++;
+ if(final){seal(stage);page=0;sealed=true}else page++;
  paint();d.querySelector('h2').setAttribute('tabindex','-1');d.querySelector('h2').focus({preventScroll:true});
  });proceed.hidden=true;
  const reveal=()=>{stop();visual.textContent=pages[page];done=true;proceed.hidden=false};
@@ -50,7 +51,8 @@ function open(state,seal){
  else {let cursor=0;timer=setInterval(()=>{visual.textContent=pages[page].slice(0,++cursor);if(cursor>=pages[page].length)reveal()},60)}
  d.scrollTop=0;
  }
- paint();if(!d.open)d.showModal();d.querySelector('button').focus({preventScroll:true});d.addEventListener('close',stop,{once:true});
+ paint();if(!d.open)d.showModal();d.querySelector('button').focus({preventScroll:true});d.addEventListener('close',()=>{stop();options.onClose?.()},{once:true});
 }
 root.NightTrust={letters,at,available,open};if(typeof module!=='undefined')module.exports=root.NightTrust;
 })(typeof globalThis!=='undefined'?globalThis:this);
+

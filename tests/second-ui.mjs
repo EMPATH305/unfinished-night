@@ -36,11 +36,18 @@ export async function runSecondUI(page,{importSave,report=()=>{},capture=async()
    check(await trust.evaluate(e=>e.scrollWidth<=e.clientWidth),'Trust fits mobile width');
    await capture('trust-six');
    await trust.getByRole('button',{name:'我已在現實中封存第 6 封信',exact:true}).click();
-   check(await trust.getByRole('heading',{name:'第六封之後，仍有留白',exact:true}).isVisible(),'Stops before unwritten seventh');
+   check(await trust.getByRole('heading',{name:'信留在你手裡',exact:true}).isVisible(),'Stops before unwritten seventh');
    await trust.getByRole('button',{name:'暫時離開',exact:true}).click();
   }
   await close();
-  await visit('record_a');await close();await visit('record_b');await close();
+  await visit('record_a');await close();await visit('record_b');
+  if(i===1){
+   check((await page.locator('#dialog-text').innerText()).includes('聲音從哪裡來'),'Sixth-letter branch stays inline');
+   const proof=page.locator('.resonance-proof');check(await proof.isVisible(),'Inline evidence checks');
+   await proof.getByText('查看空場測試的限制',{exact:true}).click();
+   check((await proof.innerText()).includes('每份舊判決'),'Evidence limits remain visible');
+  }
+  await close();
   await region(1);await visit('record_c');await close();await visit('after');await close();
   await region(0);await visit('inquiry');
   await click('確認安排');check(await page.locator('.puzzle-feedback').isVisible(),'Wrong-answer feedback stays inside dialog');
@@ -67,4 +74,5 @@ export async function runSecondUI(page,{importSave,report=()=>{},capture=async()
  await click('關閉手記');
  return {passed:true};
 }
+
 

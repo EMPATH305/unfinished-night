@@ -48,6 +48,11 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  if(first.name!=='none')check(motion.walking&&motion.name.includes('walk-bob'),'Landmark movement should animate the traveler');
  await readAll();
  await click('追問：餘彩域與借色的夜市');await readAll();check(await page.getByRole('heading',{name:'亞恩的另一盞燈',exact:true}).isVisible(),'World story must open');await click('回到剛才的對話');
+ await click('自願開啟 · 空白信託');
+ await click('立即顯示全文');await click('我已在現實中封存第 1 封信');
+ check(await page.getByRole('heading',{name:'信留在你手裡',exact:true}).isVisible(),'One contextual envelope per encounter');
+ await click('暫時離開');await readAll();
+ check((await page.locator('#dialog-text').innerText()).includes('留著接縫'),'Sealing updates the current landmark inline');
  check((await query(()=>document.querySelector('#traveler').style.top))!==before,'Traveler must reach the landmark');
  await click('借取燈中的黃色 燈會暫時暗下來。');await close();
  await visit('褪色的信');await click('用黃色照亮信件');await close();
@@ -82,4 +87,5 @@ export async function runUIRegression(page, { allowReset = false, report = () =>
  report('PASS: sequence retry, decision mood, aftermath, mobile tools and world stories');
  return {passed:true,chapter:1};
 }
+
 

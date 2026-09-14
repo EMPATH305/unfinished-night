@@ -24,8 +24,14 @@ function render(){
 function updatePosition(){const p=game.state.position;$('traveler').style.left=p.x+'%';$('traveler').style.top=p.y+'%'}
 function setMotion(moving,dx){const t=$('traveler');t.classList.toggle('walking',moving);if(dx>0.02){t.classList.add('dir-right');t.classList.remove('dir-left')}else if(dx<-0.02){t.classList.add('dir-left');t.classList.remove('dir-right')}}
 function paragraphs(element,text){element.replaceChildren();text.forEach(t=>{const p=document.createElement('p');p.textContent=t;element.append(p)})}
-function openTrust(){cancelMove();keys.clear();window.NightTrust.open(game.state,stage=>{game.sealTrust(stage);save()})}
-function show(view,handlers){if(!view){$('story-dialog').close();render();save();return}cancelMove();if(game.state.chapter===6&&game.state.blank_trust_stage===5)view={...view,trustIds:[6]};const d=$('story-dialog');d.querySelector('.dialog-notice')?.remove();$('toast').textContent='';$('toast').classList.remove('show');$('dialog-speaker').textContent=view.speaker;$('dialog-kicker').textContent=view.puzzle?.kind==='ending'?'THE UNFINISHED NIGHT · 終章':'畫境裡的聲音';paragraphs($('dialog-text'),view.text);$('dialog-choices').replaceChildren();$('puzzle-area').replaceChildren();
+function openTrust(overview=false){cancelMove();const previous=game.view;window.NightTrust.open(game.state,stage=>{game.sealTrust(stage);save()},{overview,onClose:()=>{
+ if(!overview&&previous?.resonanceNode&&$('story-dialog').open){
+  const base={...previous,text:previous.text.slice(0,previous.marginStart),marginIds:[]};
+  const view=window.NightResonance.decorate(game.state,previous.resonanceNode,true,base);
+  view.trustIds=window.NightTrust.at(game.state,view.resonanceNode,true);game.view=view;show(view);
+ }
+}})}
+function show(view,handlers){if(!view){$('story-dialog').close();render();save();return}cancelMove();const d=$('story-dialog');d.querySelector('.dialog-notice')?.remove();$('toast').textContent='';$('toast').classList.remove('show');$('dialog-speaker').textContent=view.speaker;$('dialog-kicker').textContent=view.puzzle?.kind==='ending'?'THE UNFINISHED NIGHT · 終章':'畫境裡的聲音';paragraphs($('dialog-text'),view.text);$('dialog-choices').replaceChildren();$('puzzle-area').replaceChildren();
  for(const choice of view.choices||[]){const button=document.createElement('button');button.textContent=choice.label;if(choice.detail){const detail=document.createElement('small');detail.textContent=choice.detail;button.append(detail)}button.onclick=()=>{try{const next=handlers?handlers[choice.id]():game.choose(choice.id);render();save();if(next!==undefined)show(next);else d.close()}catch(e){toast(e.message)}};$('dialog-choices').append(button)}
  if(view.puzzle&&view.puzzle.kind!=='ending')renderPuzzle(view.puzzle);
  if(!view.choices?.length&&!view.puzzle){const button=document.createElement('button');button.textContent='收起話語，繼續探索';button.onclick=()=>d.close();$('dialog-choices').append(button)}
@@ -95,6 +101,14 @@ function paginateDialogue(view){
  const container=$('dialog-pagination'),area=$('puzzle-area'),choices=$('dialog-choices');container.replaceChildren();let page=0;const size=2,pages=Math.max(1,Math.ceil(view.text.length/size));
  const paint=()=>{
   paragraphs($('dialog-text'),view.text.slice(page*size,(page+1)*size));container.replaceChildren();area.hidden=choices.hidden=page<pages-1;
+  [...$('dialog-text').children].forEach((el,i)=>{if(page*size+i>=view.marginStart){el.classList.add('resonance-ink');}});
+  if(page===pages-1){for(const flag of view.marginIds||[])game.flag(flag);save();
+   if(view.bellEvidence){const proof=document.createElement('section');proof.className='resonance-proof';
+    for(const spec of window.NightResonance.checks){const detail=document.createElement('details'),summary=document.createElement('summary'),text=document.createElement('p');summary.textContent=spec.title;text.textContent=spec.text;detail.append(summary,text);proof.append(detail)}
+    if(game.state.blank_trust_stage>=6){const prompt=document.createElement('p');prompt.textContent='再找一次：有沒有什麼紀錄，會使目前的解釋站不住？';proof.append(prompt)}
+    $('dialog-text').append(proof);
+   }
+  }
   if(pages>1){
    const prev=document.createElement('button'),label=document.createElement('span'),next=document.createElement('button');prev.className='text-btn';prev.textContent='上一段';prev.disabled=page===0;
    label.textContent=(page+1)+' / '+pages;label.className='fine';label.setAttribute('aria-live','polite');
@@ -103,7 +117,7 @@ function paginateDialogue(view){
   }
  };paint();
 }
-function inspect(id){try{const revisited=game.has('c'+(game.state.chapter+1)+'_visited_'+id);const view=game.interact(id),entry=Atlas.at(game.state,id);view.trustIds=window.NightTrust.at(game.state,id,revisited);if(entry)view.loreId=entry.id;render();show(view);save()}catch(e){toast(e.message)}}
+function inspect(id){try{const revisited=game.has('c'+(game.state.chapter+1)+'_visited_'+id);const view=game.interact(id),entry=Atlas.at(game.state,id);view.trustIds=window.NightTrust.at(game.state,id,revisited);if(id.startsWith('record_')&&!game.has('c'+(game.state.chapter+1)+'_evidence_'+id.slice(-1)))view.trustIds=[];if(entry)view.loreId=entry.id;render();show(view);save()}catch(e){toast(e.message)}}
 function moveTo(x,y,node){if(!active||$('story-dialog').open||$('journal-dialog').open||$('trust-dialog').open)return Promise.resolve(false);cancelMove();target={x:Math.max(5,Math.min(95,x)),y:Math.max(23,Math.min(91,y)),node};if(reduced){game.state.position={x:target.x,y:target.y};updatePosition();target=null;if(node)inspect(node);save();return Promise.resolve(true)}return new Promise(resolve=>{arrival=resolve})}
 function tick(now){const dt=Math.min((now-lastTime)/1000||0,.06);lastTime=now;if(active&&!$('story-dialog').open&&!$('journal-dialog').open&&!$('trust-dialog').open){const p=game.state.position;let dx=0,dy=0;if(keys.has('ArrowLeft')||keys.has('a'))dx--;if(keys.has('ArrowRight')||keys.has('d'))dx++;if(keys.has('ArrowUp')||keys.has('w'))dy--;if(keys.has('ArrowDown')||keys.has('s'))dy++;
  if(dx||dy){if(target){target=null;if(arrival){arrival(false);arrival=null}}const n=Math.hypot(dx,dy);p.x=Math.max(5,Math.min(95,p.x+dx/n*dt*23));p.y=Math.max(23,Math.min(91,p.y+dy/n*dt*30));updatePosition();setMotion(true,dx)}
@@ -115,7 +129,7 @@ function appendAtlas(content){
  const found=Atlas.available(game.state),intro=document.createElement('p');intro.className='fine';intro.textContent='已發現 '+found.length+' / '+Atlas.entries.length+' 篇 · 地標裡聽來的故事與尚待查證的傳聞。';content.append(intro);
  for(const entry of found){const section=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('div');section.className='atlas-entry';summary.textContent=entry.title;paragraphs(body,entry.text);section.append(summary,body);content.append(section)}
 }
-function journal(){cancelMove();$('journal-dialog').querySelector('.dialog-notice')?.remove();const content=$('journal-content');content.replaceChildren();if(game.goal){const task=document.createElement('p');task.className='journal-task';task.textContent=game.goal.stage+' · '+game.objective();content.append(task)}Story.chapters.forEach((c,i)=>{if(i>game.state.chapter)return;const h=document.createElement('h3');h.className='journal-chapter';h.textContent=c.roman+' / '+c.title;content.append(h);const memories=game.state.memories.filter(k=>Story.memories[k].chapter===i);if(!memories.length){const p=document.createElement('p');p.className='fine';p.textContent='這一頁，還在等待故事。';content.append(p)}for(const k of memories){const m=Story.memories[k],card=document.createElement('article'),title=document.createElement('h3'),p=document.createElement('p');card.className='memory-card';title.textContent=m.title;p.textContent=game.memoryText(k);card.append(title,p);content.append(card)}const chosen=game.state.choices['c'+(i+1)];if(chosen){const p=document.createElement('p');p.className='fine';p.textContent='留下的選擇：'+Story.choiceNames[chosen];content.append(p)}});appendAtlas(content);$('journal-dialog').showModal()}
+function journal(){cancelMove();$('journal-dialog').querySelector('.dialog-notice')?.remove();const content=$('journal-content');content.replaceChildren();if(game.goal){const task=document.createElement('p');task.className='journal-task';task.textContent=game.goal.stage+' · '+game.objective();content.append(task)}Story.chapters.forEach((c,i)=>{if(i>game.state.chapter)return;const h=document.createElement('h3');h.className='journal-chapter';h.textContent=c.roman+' / '+c.title;content.append(h);const memories=game.state.memories.filter(k=>Story.memories[k].chapter===i);if(!memories.length){const p=document.createElement('p');p.className='fine';p.textContent='這一頁，還在等待故事。';content.append(p)}for(const k of memories){const m=Story.memories[k],card=document.createElement('article'),title=document.createElement('h3'),p=document.createElement('p');card.className='memory-card';title.textContent=m.title;p.textContent=game.memoryText(k);card.append(title,p);content.append(card)}for(const note of window.NightResonance.journal(game.state,i)){const card=document.createElement('article'),title=document.createElement('h3');card.className='memory-card resonance-note';title.textContent=note.title;card.append(title);const body=document.createElement('div');paragraphs(body,note.text);card.append(body);content.append(card)}const chosen=game.state.choices['c'+(i+1)];if(chosen){const p=document.createElement('p');p.className='fine';p.textContent='留下的選擇：'+Story.choiceNames[chosen];content.append(p)}});appendAtlas(content);$('journal-dialog').showModal()}
 function download(){const blob=new Blob([JSON.stringify(game.state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='unfinished-night-journey.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('旅程存檔已準備下載。')}
 function help(){show({speaker:'如何在畫境裡旅行',text:['點擊地標，旅人會走近並開啟對話。也可用 WASD 或方向鍵移動，靠近地標後按 E；手機可直接點地標，或用底部「地點清單」前往；「方向鍵」可展開移動與互動按鈕。','每章有兩個探索區域，可從畫面上方切換；標有「線索」的區域包含下一項目標。畫面右上的「當前線索」會隨進度改變。卡住時按「問問墨」；謎題裡也能重讀線索。','借色會暫時改變來源。完成修復後，顏色會歸還或安放到新位置。選擇沒有倒數，請慢慢讀。','旅程會自動儲存在這個瀏覽器。從「旅人手記」下載存檔，就能換到另一台裝置繼續。按 Esc 可關閉對話。'],choices:[]})}
 function sound(){if(audioOn){audioOn=false;clearInterval(audioTimer);if(audioGain)audioGain.gain.setTargetAtTime(0,audioCtx.currentTime,.5);$('sound-btn').textContent='♫';$('sound-btn').setAttribute('aria-label','開啟環境音');return}try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw Error();if(!audioCtx){audioCtx=new AC();audioGain=audioCtx.createGain();audioGain.gain.value=0;audioGain.connect(audioCtx.destination)}audioCtx.resume();audioOn=true;audioGain.gain.setTargetAtTime(.11,audioCtx.currentTime,.5);const play=()=>{if(document.hidden)return;const t=audioCtx.currentTime,notes=[146.83,174.61,220,261.63,293.66];[0,1,2].forEach((n)=>{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='sine';osc.frequency.value=notes[(game.state.chapter+n*2)%notes.length];gain.gain.setValueAtTime(0,t+n*.8);gain.gain.linearRampToValueAtTime(.12,t+n*.8+1.5);gain.gain.exponentialRampToValueAtTime(.001,t+n*.8+6);osc.connect(gain);gain.connect(audioGain);osc.start(t+n*.8);osc.stop(t+n*.8+7)})};play();audioTimer=setInterval(play,7000);$('sound-btn').textContent='♪';$('sound-btn').setAttribute('aria-label','關閉環境音')}catch(e){toast('這個瀏覽器暫時無法播放環境音。')}}
@@ -146,7 +160,7 @@ const skyObserver=new ResizeObserver(alignSky);skyObserver.observe($('title-scre
 const motionQuery=matchMedia('(prefers-reduced-motion: reduce)');let skyPaused=motionQuery.matches;
 function updateSky(){const stopped=skyPaused||motionQuery.matches;$('title-screen').classList.toggle('sky-paused',stopped);$('sky-motion-btn').textContent=stopped?'播放星空':'暫停星空';$('sky-motion-btn').setAttribute('aria-pressed',String(!stopped));$('sky-motion-btn').disabled=motionQuery.matches;if(motionQuery.matches)$('sky-motion-btn').textContent='星空已靜止'}
 $('sky-motion-btn').onclick=()=>{skyPaused=!skyPaused;updateSky()};motionQuery.addEventListener('change',updateSky);updateSky();
-$('trust-title').onclick=()=>{cancelMove();openTrust()};
+$('trust-title').onclick=()=>openTrust(true);
 $('atlas-title').onclick=()=>show({speaker:'餘彩域 · 未乾的世界',text:Atlas.overview,choices:[]});
 $('mobile-journal').onclick=journal;$('mobile-hint').onclick=()=>$('hint-btn').click();
 $('movement-toggle').onclick=()=>{const panel=$('touch-controls');panel.hidden=!panel.hidden;$('movement-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
@@ -156,6 +170,7 @@ $('touch-interact').onclick=nearby;
 for(const btn of document.querySelectorAll('[data-dir]'))btn.onlostpointercapture=()=>{keys.clear();setMotion(false,0);save()};
 title();alignSky();requestAnimationFrame(tick);
 })();
+
 
 
 
