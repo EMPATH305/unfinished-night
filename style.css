@@ -23,13 +23,13 @@
 .puzzle-grid button[aria-pressed="true"]{border-color:var(--gold);background:#5e512f;color:#fff0c4}.puzzle-grid button[aria-pressed="true"]::before{content:'✓ ';}.puzzle-clue,.journal-task{font-size:15px;line-height:1.9;padding:15px;border-left:2px solid var(--gold);background:#e6c67808;color:#e6dfce}.puzzle-clue{margin-top:18px;position:relative;z-index:5}
 .puzzle-grid{position:relative;z-index:1}
 @media(max-width:800px){.journey-strip{flex-direction:column;align-items:stretch;padding:11px 4%;gap:10px}#region-nav{display:grid;grid-template-columns:1fr 1fr}.region-button{padding:10px 8px;font-size:14px;min-height:46px}#chapter-phase{font-size:16px}.phase-label{display:none}#world{height:calc(100svh - 300px);min-height:460px}.hotspot-label{max-width:128px}.quest{max-width:185px}}
-@media(max-width:460px){#world{height:calc(100svh - 321px);min-height:450px}.quest{max-width:150px}.quest p{font-size:13px}.hotspot-label{font-size:13px;max-width:115px}.chapter-label h2{font-size:22px}.assignment-row{grid-template-columns:1fr}.assignment-row select{width:100%}.puzzle-grid{gap:8px}.puzzle-grid button{font-size:15px;padding:12px}.region-hint{font-size:12px}.region-button{font-size:13px}}
+@media(max-width:460px){#world{height:calc(100svh - 321px);min-height:450px}.quest{max-width:150px}.quest p{font-size:13px}.hotspot-label{font-size:13px;max-width:115px}.chapter-label h2{font-size:22px}.assignment-row{grid-template-columns:1fr}.assignment-row select{width:100%}.puzzle-grid{gap:8px}.puzzle-grid button{font-size:15px;padding:12px}.region-hint{font-size:12px}.region-button{font-size:13px}.title-copy h1{font-size:36px;letter-spacing:.06em}.title-copy .english-title{font-size:12px}.title-copy .intro{font-size:14px}.menu-actions button{padding:12px 16px;font-size:15px}.companion-bar{flex-direction:column;align-items:flex-start;gap:8px;padding:12px 4%}.companion-bar p{font-size:13px}.crow-portrait{width:36px;height:36px}.dialog-notice,.puzzle-feedback{font-size:13px;padding:8px 12px}.assignment-row label{font-size:14px}.assignment-row select{font-size:14px;padding:10px}}
 
 /* Rotate only softly masked sky paint; the town and title stay still. */
-.title-sky{position:absolute;inset:0;z-index:-2;overflow:hidden;pointer-events:none;mask-image:linear-gradient(#000 0%,#000 45%,transparent 70%)}
-.sky-vortex{position:absolute;aspect-ratio:1;background-image:url('assets/night.jpg');background-repeat:no-repeat;background-size:220% auto;background-position:80% 5%;border-radius:50%;mask-image:radial-gradient(circle,#000 15%,#000c 35%,transparent 70%);opacity:.9;animation:sky-turn 120s linear infinite;will-change:transform;transform-origin:center center}
-.sky-vortex-main{isolation:isolate}
-.sky-vortex-main::after{inset:6%;background:radial-gradient(circle,#ffe3a355,transparent 68%)}
+.title-sky{position:absolute;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.sky-vortex{position:absolute;aspect-ratio:1;background-image:url('assets/night.jpg');background-repeat:no-repeat;background-size:200% auto;background-position:50% 50%;border-radius:50%;box-shadow:0 0 100px 30px rgba(255,255,255,0.1);opacity:.8;animation:sky-turn 60s linear infinite;will-change:transform;transform-origin:center center}
+.sky-vortex-main{width:min(60vw,80vh);left:20%;top:-10%;}
+.sky-vortex-small{width:min(35vw,50vh);left:65%;top:-5%;background-position:70% 30%;animation-duration:45s;animation-direction:reverse;opacity:.6;box-shadow:0 0 60px 20px rgba(255,255,255,0.08)}
 @keyframes sky-turn{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .sky-paused .sky-vortex,#title-screen[hidden] .sky-vortex{animation-play-state:paused}
 .title-tools{display:flex;align-items:center;gap:8px;letter-spacing:normal}
@@ -41,7 +41,7 @@
 .puzzle-feedback,.dialog-notice{color:#ffdfce;background:#4b2833;border-left:3px solid #f1ab88;padding:12px 16px;font-size:15px;line-height:1.8;overflow-wrap:anywhere;scroll-margin:16px;margin:16px 0;position:relative;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);animation:fadeIn 0.3s ease-in;border-radius:4px}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .puzzle-feedback:empty,.puzzle-clue:empty{margin:0;padding:0;border:0;min-height:0;box-shadow:none}
-@media(max-width:800px){.title-tools{gap:0}.title-tools .quiet{padding:10px 7px}#world:focus-visible #map-hint{display:block;bottom:70px;right:14px;max-width:185px;font-size:11px}}
+@media(max-width:800px){.title-tools{gap:0}.title-tools .quiet{padding:10px 7px}#world:focus-visible #map-hint{display:block;bottom:70px;right:14px;max-width:185px;font-size:11px}.title-copy h1{font-size:48px;letter-spacing:.08em}.title-copy .english-title{font-size:14px}.title-copy .intro{font-size:15px}.menu-actions button{padding:14px 20px;font-size:16px}#touch-controls button{width:40px;height:40px;font-size:18px;border-radius:8px}.touch-controls>div{gap:8px}.dialog-notice,.puzzle-feedback{font-size:14px;padding:10px 14px}}
 @media(prefers-reduced-motion:reduce){.sky-vortex{animation:none!important;will-change:auto}}
 
 
