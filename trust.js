@@ -8,7 +8,7 @@ const sixth=[
 '墨：「感動被感受到，不等於你已知道它從哪裡來。窗上的光是真的；我們替窗外取的名字，仍可能需要更正。」',
 '墨：「我也只有一些片段。若要檢查一個故事，也許得容許別人的腳印走進來——包括那些不替它作證的。」'
 ];
-function available(state){return (state.blank_trust_stage||0)<5||((state.blank_trust_stage||0)===5&&state.chapter>=6)}
+function available(state){const limit=root.NightRelease?.chapters||8;return (state.blank_trust_stage||0)<5||(limit>5&&(state.blank_trust_stage||0)===5&&state.chapter>=6)}
 function at(state,node,revisited){const stage=state.blank_trust_stage||0,c=state.chapter;
  if(stage===5&&c===6&&['witness','inquiry'].includes(node))return [6];
  if(stage===0&&((c===0&&node==='lamp')||(c===6&&node==='record_c')))return [1];
@@ -20,7 +20,8 @@ function at(state,node,revisited){const stage=state.blank_trust_stage||0,c=state
  return [];
 }
 function open(state,seal,options={}){
- const doc=root.document,d=doc.getElementById('trust-dialog');let timer,page=0,sealed=false;
+ const doc=root.document,d=doc.getElementById('trust-dialog'),english=root.NightI18n?.isEnglish();let timer,page=0,sealed=false;
+ const T=(zh,en)=>english?en:zh;
  const make=(tag,text)=>{const e=doc.createElement(tag);if(text)e.textContent=text;return e};
  const btn=(text,run)=>{const b=make('button',text);b.type='button';b.className='secondary';b.onclick=run;return b};
  const stop=()=>{if(timer)clearInterval(timer);timer=null};
@@ -29,26 +30,26 @@ function open(state,seal,options={}){
  function paint(){
  stop();d.replaceChildren();const stage=state.blank_trust_stage||0;
  d.classList.toggle('trust-snow',stage===5&&available(state));
- const top=make('div');top.className='dialog-top';top.append(make('span','空白信託'),btn('暫時離開',close));
- const h=make('h2',available(state)?'第'+(stage+1)+'封':stage===5?'五道提問暫告一段落':'第六封之後，仍有留白');h.id='trust-heading';d.append(top,h);
- if(options.overview||sealed){h.textContent=sealed?'信留在你手裡':'空白信託 · 地標中的信封';d.append(make('p',sealed?'這裡只收下封信的聲明。'+(['','下一封在麥原的回信站。','下一封在候歸之室離開前的門邊。','離開房間以前，可以回到鏡前遇見第四封。','第五封在空白海的最初畫架。','第六封在雪鈴城的雙窗聽證所。','第七至十題仍未開放。'][stage]||''):'問題會在地標與過場中出現：第一封在迴星鎮的燈，第二封在麥原回信站，第三封在候歸之室離開前，第四封在離室前回看鏡子，第五封在空白海畫架。'),make('p','已聲明封存 '+stage+' 封。沒有答案輸入或上傳入口；參與與否不影響主線。'));return}
- if(!available(state)){d.append(make('p',stage===5?'下一封在第七章雪鈴城等待。你也可以繼續主線，不必寫信。':'第七至十題尚未開放。信仍留在你手裡。'));return}
- const pages=stage===5?[...sixth,letters[stage].question]:[letters[stage].question];
+ const top=make('div');top.className='dialog-top';top.append(make('span',T('空白信託','BLANK TRUST')),btn(T('暫時離開','Leave for now'),close));
+ const h=make('h2',available(state)?T('第'+(stage+1)+'封','Letter '+(stage+1)):T('五道提問暫告一段落','Five questions, for now'));h.id='trust-heading';d.append(top,h);
+ if(options.overview||sealed){h.textContent=sealed?T('信留在你手裡','The letter stays with you'):T('空白信託 · 地標中的信封','Blank Trust · Envelopes in the landscape');d.append(make('p',sealed?T('這裡只收下封信的聲明。下一封會在往後的地標出現。','The page records only that you sealed a letter. The next envelope will appear at a later landmark.'):T('問題會在地標與過場中出現：第一封在迴星鎮的燈，第二封在麥原回信站，第三封在候歸之室離開前，第四封在離室前回看鏡子，第五封在空白海畫架。','Questions surface at landmarks and transitions: the first at the lamp, the second at the wheatfield reply post, the third before leaving the blue room, the fourth at its mirror, and the fifth at the first easel.')),make('p',T('已聲明封存 '+stage+' 封。沒有答案輸入或上傳入口；參與與否不影響主線。',stage+' sealed. There is no answer field or upload. Participation never blocks the main story.')));return}
+ if(!available(state)){d.append(make('p',T('前五封暫告一段落。第二部仍在製作；信仍留在你手裡。','The first five letters pause here. Part Two is still in development; every letter remains with you.')));return}
+ const question=english&&stage<5?root.NightI18n.trust[stage]:letters[stage].question;const pages=stage===5?[...sixth,question]:[question];
  const final=page===pages.length-1;
- d.append(make('p',final?'若願意，準備 A6 白紙（105 × 148 mm）、筆與實體信封。在現實書寫後封存；不必交給任何人。':'雙窗聽證所 · '+(page+1)+' / '+pages.length));
+ d.append(make('p',final?T('若願意，準備 A6 白紙（105 × 148 mm）、筆與實體信封。在現實書寫後封存；不必交給任何人。','If you wish, prepare A6 paper (105 × 148 mm), a pen and a physical envelope. Write offline and seal it. You do not have to give it to anyone.'):T('雙窗聽證所 · '+(page+1)+' / '+pages.length,'Testimony Hall · '+(page+1)+' / '+pages.length)));
  if(final){const envelope=make('div');envelope.className='trust-envelope';envelope.setAttribute('aria-hidden','true');d.append(envelope)}
  const p=make(final?'blockquote':'p');p.className='trust-question';p.id=final?'trust-question':'trust-passage';p.setAttribute('aria-label',pages[page]);
  const reserve=make('span',pages[page]);reserve.className='trust-reserve';reserve.setAttribute('aria-hidden','true');
  const visual=make('span');visual.className='trust-ink-text';visual.setAttribute('aria-hidden','true');p.append(reserve,visual);
  const actions=make('div');actions.className='trust-actions';
- let done=false;const proceed=btn(final?'我已在現實中封存第 '+(stage+1)+' 封信':'讀下一段',()=>{
+ let done=false;const proceed=btn(final?T('我已在現實中封存第 '+(stage+1)+' 封信','I sealed Letter '+(stage+1)+' in the physical world'):T('讀下一段','Read the next passage'),()=>{
  if(!done)return;proceed.disabled=true;stop();
  if(final){seal(stage);page=0;sealed=true}else page++;
  paint();d.querySelector('h2').setAttribute('tabindex','-1');d.querySelector('h2').focus({preventScroll:true});
  });proceed.hidden=true;
  const reveal=()=>{stop();visual.textContent=pages[page];done=true;proceed.hidden=false};
- actions.append(btn('立即顯示全文',reveal),proceed);
- d.append(p,actions,make('p','網頁只記錄封信階段，不讀取、驗證或儲存信件內容，也不根據封信推測你的答案。可以隨時離開；主線不受影響。'));
+ actions.append(btn(T('立即顯示全文','Show full text now'),reveal),proceed);
+ d.append(p,actions,make('p',T('網頁只記錄封信階段，不讀取、驗證或儲存信件內容，也不根據封信推測你的答案。可以隨時離開；主線不受影響。','The page records only the letter stage. It never reads, checks, stores or infers your answer. You may leave at any time; the main story is unaffected.')));
  if(root.matchMedia('(prefers-reduced-motion: reduce)').matches)reveal();
  else {let cursor=0;timer=setInterval(()=>{visual.textContent=pages[page].slice(0,++cursor);if(cursor>=pages[page].length)reveal()},60)}
  d.scrollTop=0;
@@ -57,4 +58,3 @@ function open(state,seal,options={}){
 }
 root.NightTrust={letters,at,available,open};if(typeof module!=='undefined')module.exports=root.NightTrust;
 })(typeof globalThis!=='undefined'?globalThis:this);
-

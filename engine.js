@@ -5,6 +5,7 @@ Journey.install(Story);
 const Second=root.NightSecond||(typeof require==='function'?require('./second.js'):null);
 Second.install(Story);
 const Resonance=root.NightResonance||(typeof require==='function'?require('./resonance.js'):null);
+const Release=root.NightRelease||{chapters:8};
 const SAVE_VERSION=2;
 // Schema migrations are separate from story progression. Never mutate an import.
 const migrations={1:raw=>({...raw,version:2,contentVersion:raw.contentVersion??1,region:raw.region??0})};
@@ -204,9 +205,9 @@ class Game{
   return {ok:true,view:this.show(texts[0],texts[1])};
  }
  finish(value){this.state.choices.c5=value;this.state.finished=true;this.flag('c5_done');return this.ending()}
- startSecond(){if(this.state.chapter!==4||!this.state.finished||!this.state.choices.c5)throw Error('先完成第一部，再從結局繼續遠行。');this.state.chapter=5;this.state.contentVersion=3;this.state.finished=false;this.state.region=0;this.state.pigments=[];this.state.position={x:50,y:84};return this.intro()}
+ startSecond(){if(Release.chapters<=5)throw Error('第二部仍在製作中。這份封盤版停在第五章。');if(this.state.chapter!==4||!this.state.finished||!this.state.choices.c5)throw Error('先完成第一部，再從結局繼續遠行。');this.state.chapter=5;this.state.contentVersion=3;this.state.finished=false;this.state.region=0;this.state.pigments=[];this.state.position={x:50,y:84};return this.intro()}
  ending(){if(this.state.chapter>=5)return Second.ending(this);const c=this.state.choices;const titles={restore:'結局 · 有窗的畫框',open:'結局 · 往返之岸',share:'結局 · 眾人的筆觸'};const opening={restore:'你修補畫框，並在每個畫境留下可以打開的議事窗。邊界仍在，卻不再只有一個高處的人決定世界如何運作。',open:'你在畫框上開出第一道可往返的門。有人踏出去，有人選擇留下；回家的路被仔細標記，未知沒有被假裝成安全。',share:'你把畫筆分給願意參與的居民。第一天，他們就為天空的顏色爭論。你們先約定：改動會影響別人的地方，要一起商量，也要能修回來。'};
-  return this.show(titles[c.c5],Journey.ending(this,[opening[c.c5],c.c1==='dawn'?'迴星鎮有了第二個早晨。索恩在鐘樓下學著修一張普通的椅子。':'迴星鎮還在星夜裡，但每次循環的代價都公開記錄。亞恩加入了決定下一個明天的集會。',c.c2==='letter'?'製燈人收到艾菈的信。他沒有等到歸期，卻不再把沉默誤認成她的意願。':'麥原兩端的路標仍然清晰。艾菈沿著自己選擇的路回去探望，也再次自由離開。',c.c3==='seasons'?'日葵庭第一次入冬。瑟芙向老居民學習護根，路恩知道明年還可能再開花。':'日葵庭有幾天不再明亮。居民學著接受有人拒絕，並反覆修改輪值制度。',c.c4==='rest'?'藍色房間仍提供歇腳的地方。門旁添了一面鐘，窗戶永遠留一條縫。':'藍色房間不再替住客安排過去。桌上那封沒有落款的信，終於只是一張紙。','墨落在你的肩上。「今天有幾個人？」牠問。你開始數，牠安靜地聽。','畫布還沒有乾。這一次，未完成也可以是一種希望。']),[say('continue-second','繼續遠行 · 前往赤赭鹽市',()=>this.startSecond()),say('epilogue-close','留在畫境，翻閱旅人手記',()=>null)],{kind:'ending',id:c.c5});
+  return this.show(titles[c.c5],Journey.ending(this,[opening[c.c5],c.c1==='dawn'?'迴星鎮有了第二個早晨。索恩在鐘樓下學著修一張普通的椅子。':'迴星鎮還在星夜裡，但每次循環的代價都公開記錄。亞恩加入了決定下一個明天的集會。',c.c2==='letter'?'製燈人收到艾菈的信。他沒有等到歸期，卻不再把沉默誤認成她的意願。':'麥原兩端的路標仍然清晰。艾菈沿著自己選擇的路回去探望，也再次自由離開。',c.c3==='seasons'?'日葵庭第一次入冬。瑟芙向老居民學習護根，路恩知道明年還可能再開花。':'日葵庭有幾天不再明亮。居民學著接受有人拒絕，並反覆修改輪值制度。',c.c4==='rest'?'藍色房間仍提供歇腳的地方。門旁添了一面鐘，窗戶永遠留一條縫。':'藍色房間不再替住客安排過去。桌上那封沒有落款的信，終於只是一張紙。','墨落在你的肩上。「今天有幾個人？」牠問。你開始數，牠安靜地聽。','畫布還沒有乾。這一次，未完成也可以是一種希望。']),[...(Release.chapters>5?[say('continue-second','繼續遠行 · 前往赤赭鹽市',()=>this.startSecond())]:[]),say('epilogue-close','留在畫境，翻閱旅人手記',()=>null)],{kind:'ending',id:c.c5});
  }
  objective(){if(this.goal)return this.goal.text;const f=k=>this.has(k),c=this.state.choices;
  switch(this.state.chapter){case 0:if(c.c1)return '看看製燈人的回應，再前往麥田小徑。';if(!f('c1_letter'))return f('c1_yellow')?'用黃色照亮褪色的信。':'向製燈人借一點黃色。';if(!f('c1_keeper'))return f('c1_blue')?'用藍色穿過裂縫，見守夜人。':'向靜藍井借藍，前往鐘樓。';return f('c1_tuned')?'回到星辰，決定小鎮的未來。':'依信的提示喚醒星鐘。';
@@ -218,6 +219,5 @@ class Game{
 }
 root.NightGame=Game;if(typeof module!=='undefined')module.exports=Game;
 })(typeof globalThis!=='undefined'?globalThis:this);
-
 
 

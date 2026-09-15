@@ -4,9 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runUIRegression } from './ui-regression.mjs';
-import { runSecondUI } from './second-ui.mjs';
-import { runLoreTrustUI } from './lore-trust-ui.mjs';
 import { runTrustUI } from './trust-ui.mjs';
+import { runReleaseUI } from './release-ui.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.jpg':'image/jpeg'};
 const server=createServer(async(req,res)=>{
@@ -32,34 +31,13 @@ try{
   finally{await page.screenshot({path:'ui-'+name+'.png',fullPage:true});await context.close()}
  }
 
- for(const mode of [{name:'second-desktop',viewport:{width:1366,height:900}},{name:'second-mobile',viewport:{width:390,height:844},isMobile:true,hasTouch:true},{name:'second-compact',viewport:{width:320,height:740},isMobile:true,hasTouch:true},{name:'second-landscape',viewport:{width:844,height:390},isMobile:true,hasTouch:true}]){
-  const {name,...opts}=mode;await secondContext(browser,name,opts);
- }
- for(const opts of [{viewport:{width:1366,height:900}},{viewport:{width:320,height:740},isMobile:true,hasTouch:true},{viewport:{width:844,height:390},isMobile:true,hasTouch:true},{viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}])await loreContext(browser,opts);
+ const releaseContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}),releasePage=await releaseContext.newPage();
+ await releasePage.goto('http://127.0.0.1:'+server.address().port);await runReleaseUI(releasePage,{firstPartSave:resolve(root,'tests/first-part-completed.json'),report:console.log});await releaseContext.close();
  await browser.close();browser=await webkit.launch();
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  try{await page.goto('http://127.0.0.1:'+server.address().port);await runTrustUI(page,{report:line=>console.log('trust: '+line)});await runUIRegression(page,{report:line=>console.log('webkit-mobile: '+line)});if(errors.length)throw Error(errors.join('\n'));}
  finally{await page.screenshot({path:'ui-webkit-mobile.png',fullPage:true});await context.close()}
- await loreContext(browser,{viewport:{width:390,height:844},isMobile:true,hasTouch:true});
- await secondContext(browser,'second-webkit',{viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ const releaseWebkit=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce'}),releaseWebkitPage=await releaseWebkit.newPage();
+ await releaseWebkitPage.goto('http://127.0.0.1:'+server.address().port);await runReleaseUI(releaseWebkitPage,{firstPartSave:resolve(root,'tests/first-part-completed.json'),report:line=>console.log('webkit: '+line)});await releaseWebkit.close();
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve))}
 
-
-async function secondContext(browser,name,options){
- const context=await browser.newContext({...options,reducedMotion:'reduce'}),page=await context.newPage(),errors=[];
- page.on('pageerror',e=>errors.push(e.message));
- try{
-  await page.goto('http://127.0.0.1:'+server.address().port);
-  await runSecondUI(page,{
-   importSave:async()=>{const pending=page.waitForEvent('filechooser');await page.getByRole('button',{name:'匯入旅程存檔',exact:true}).click();await (await pending).setFiles(resolve(root,'tests/first-part-completed.json'));},
-   capture:async step=>page.screenshot({path:'ui-'+name+'-'+step+'.png',fullPage:true}),
-   report:line=>console.log(name+': '+line)
-  });
-  if(errors.length)throw Error(errors.join('\n'));
-  await page.reload();await page.getByRole('button',{name:'回到已完成的旅程',exact:true}).click();
-  if(!await page.getByRole('heading',{name:'第二部結局 · 仍容得下回答的地方',exact:true}).isVisible())throw Error('Finished second-part save must resume after reload');
- }finally{await page.screenshot({path:'ui-'+name+'-last.png',fullPage:true});await context.close();}
-}
-
-
-async function loreContext(browser,opts){const context=await browser.newContext(opts),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));try{await page.goto('http://127.0.0.1:'+server.address().port);await runLoreTrustUI(page,{report:console.log});if(errors.length)throw Error(errors.join('\n'));}finally{await page.screenshot({path:'ui-lore-'+browser.browserType().name()+'-'+opts.viewport.width+'.png',fullPage:true});await context.close();}}
