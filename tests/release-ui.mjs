@@ -35,5 +35,6 @@ export async function runReleaseUI(page,{firstPartSave,report=()=>{}}={}){
  check((await page.locator('#chapter-nav button').count())===5,'Public chapter navigation must contain exactly five chapters');
  check(!('language' in await page.evaluate(()=>JSON.parse(localStorage.getItem('unfinished-night-save-v1')))),'Language preference must stay outside the journey JSON');
  await page.reload();check(await page.locator('#language-btn').filter({hasText:'中文'}).isVisible(),'English preference must persist independently');
+ check(!(await page.locator('#save-info').innerText()).includes('undefined'),'Saved English journey must retain its chapter numeral');
  report('PASS: five-chapter seal, bilingual title/game/trust, shared save and English completed ending.');
 }
