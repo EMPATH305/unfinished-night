@@ -2,7 +2,7 @@ export async function runReleaseUI(page,{firstPartSave,report=()=>{}}={}){
  const check=(ok,message)=>{if(!ok)throw Error(message)},button=name=>page.getByRole('button',{name,exact:true});
  check(await page.locator('#language-btn').isVisible(),'Language switch must be visible on the title');
  check((await page.locator('.title-bottom').innerText()).includes('I — V'),'Public title must advertise Chapters I–V');
- await button('English').click();
+ await page.locator('#language-btn').click();
  check(await page.getByRole('heading',{name:'The Unfinished Night',exact:true}).isVisible(),'Title must switch to English');
  check((await page.locator('#save-info').innerText()).startsWith('Five painted realms'),'Release description must say five realms');
  await button('Blank Trust · Questions on paper').click();
@@ -24,6 +24,6 @@ export async function runReleaseUI(page,{firstPartSave,report=()=>{}}={}){
  check(await page.getByRole('button',{name:/Ochre Salt Market/}).count()===0,'Part Two continuation must be absent from the public ending');
  check((await page.locator('#chapter-nav button').count())===5,'Public chapter navigation must contain exactly five chapters');
  check(!('language' in await page.evaluate(()=>JSON.parse(localStorage.getItem('unfinished-night-save-v1')))),'Language preference must stay outside the journey JSON');
- await page.reload();check(await page.getByRole('button',{name:'中文',exact:true}).isVisible(),'English preference must persist independently');
+ await page.reload();check(await page.locator('#language-btn').filter({hasText:'中文'}).isVisible(),'English preference must persist independently');
  report('PASS: five-chapter seal, bilingual title/game/trust, shared save and English completed ending.');
 }
