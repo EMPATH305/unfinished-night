@@ -14,7 +14,7 @@ export async function runReleaseUI(page,{firstPartSave,report=()=>{}}={}){
  await button('Begin exploring').click();
  check(await page.getByRole('heading',{name:'Starwheel Town',exact:true}).isVisible(),'Chapter title must be English');
  check(!/[\u3400-\u9fff]/.test(await page.locator('#quest-text').innerText()),'Current objective must be English');
- check(await button('ExploreThe lampmaker’s lamp').isVisible(),'Landmarks must be playable in English');
+ check(await button('Explore The lampmaker’s lamp').isVisible(),'Landmarks must be playable in English');
  await page.locator('#game-language-btn').click();
  check(await page.getByRole('heading',{name:'迴星鎮',exact:true}).isVisible(),'Language switch must work during play');
  await page.locator('#game-language-btn').click();
