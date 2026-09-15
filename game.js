@@ -10,7 +10,7 @@ function toast(message){
 }
 function save(){if(!game.state.started&&!game.state.blank_trust_stage)return;try{localStorage.setItem(KEY,JSON.stringify(game.state));storageOK=true}catch(e){if(storageOK)toast(I18n.isEnglish()?'This browser cannot save automatically. Download the save from the notebook.':'此瀏覽器無法自動存檔。請從手記下載存檔。');storageOK=false}}
 const tr=text=>I18n.t(text);
-const chapterAt=i=>I18n.isEnglish()?I18n.chapters[i]:Story.chapters[i];
+const chapterAt=i=>I18n.isEnglish()?{...Story.chapters[i],...I18n.chapters[i]}:Story.chapters[i];
 const nodeLabel=(chapter,id,fallback)=>{if(!I18n.isEnglish())return fallback;const index=I18n.nodeIndex(chapter,id);return index>=0?I18n.nodes[chapter][index]:fallback};
 function localizeView(original){if(!I18n.isEnglish()||!original)return original;const view={...original,choices:(original.choices||[]).map(c=>({...c,label:I18n.action[c.id]||tr(c.label),detail:c.detail&&!/[\u3400-\u9fff]/.test(c.detail)?c.detail:undefined}))};
  const chapter=game.state.chapter,ch=Story.chapters[chapter],en=I18n.chapters[chapter];
