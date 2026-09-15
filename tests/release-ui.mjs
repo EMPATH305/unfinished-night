@@ -15,6 +15,16 @@ export async function runReleaseUI(page,{firstPartSave,report=()=>{}}={}){
  check(await page.getByRole('heading',{name:'Starwheel Town',exact:true}).isVisible(),'Chapter title must be English');
  check(!/[\u3400-\u9fff]/.test(await page.locator('#quest-text').innerText()),'Current objective must be English');
  check(await button('Explore The lampmaker’s lamp').isVisible(),'Landmarks must be playable in English');
+ check(await button('Explore Names Square').isVisible(),'Expanded landmarks must be translated');
+ check((await page.locator('#chapter-phase').innerText()).startsWith('I ·'),'Chapter phase must be translated');
+ check((await page.locator('#region-nav').innerText()).includes('Town Street & Star Clock'),'Area names must be translated');
+ const untranslated=await page.locator('#game-screen').evaluate(root=>{
+  const cjk=/[\u3400-\u9fff]/;
+  const visible=[...root.querySelectorAll('*')].filter(el=>{const s=getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'&&el.childElementCount===0}).map(el=>el.textContent.trim()).filter(Boolean);
+  const aria=[...root.querySelectorAll('[aria-label]')].map(el=>el.getAttribute('aria-label')).filter(Boolean);
+  return [...visible,...aria].filter(text=>cjk.test(text)&&text!=='中');
+ });
+ check(untranslated.length===0,'English game screen still contains Chinese: '+untranslated.join(' | '));
  await page.locator('#game-language-btn').click();
  check(await page.getByRole('heading',{name:'迴星鎮',exact:true}).isVisible(),'Language switch must work during play');
  await page.locator('#game-language-btn').click();
