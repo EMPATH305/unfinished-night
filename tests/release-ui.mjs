@@ -22,7 +22,7 @@ export async function runReleaseUI(page,{firstPartSave,report=()=>{}}={}){
   const cjk=/[\u3400-\u9fff]/;
   const visible=[...root.querySelectorAll('*')].filter(el=>{const s=getComputedStyle(el);return s.display!=='none'&&s.visibility!=='hidden'&&el.childElementCount===0}).map(el=>el.textContent.trim()).filter(Boolean);
   const aria=[...root.querySelectorAll('[aria-label]')].map(el=>el.getAttribute('aria-label')).filter(Boolean);
-  return [...visible,...aria].filter(text=>cjk.test(text)&&text!=='中');
+  return [...visible,...aria].filter(text=>cjk.test(text)&&!['中','切換至中文'].includes(text));
  });
  check(untranslated.length===0,'English game screen still contains Chinese: '+untranslated.join(' | '));
  await page.locator('#game-language-btn').click();
